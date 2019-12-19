@@ -1,0 +1,10 @@
+/.gradle
+/.idea
+/out
+/build
+/cache
+*.iml
+*.ipr
+*.iws
+
+/view/node_modules
