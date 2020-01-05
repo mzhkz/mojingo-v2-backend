@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    kotlin("jvm") version "1.3.50"
+    kotlin("jvm") version "1.3.60"
     application
 }
 
@@ -13,9 +13,10 @@ application {
 }
 
 repositories {
-    mavenCentral()
-    maven("https://dl.bintray.com/kotlin/kotlinx")
-    maven("https://kotlin.bintray.com/ktor")
+//    mavenCentral()
+    jcenter()
+//    maven("https://dl.bintray.com/kotlin/kotlinx")
+//    maven("https://kotlin.bintray.com/ktor")
 }
 
 dependencies {
@@ -24,15 +25,16 @@ dependencies {
 
     implementation(kotlin("stdlib-jdk8"))
     implementation("io.ktor:ktor-server-netty:$ktorVersion")
-//    implementation("io.ktor:ktor-html-builder:$ktorVersion")
     implementation("io.ktor:ktor-locations:$ktorVersion")
     implementation("io.ktor:ktor-gson:$ktorVersion")
     implementation("io.ktor:ktor-server-host-common:$ktorVersion")
+    implementation("io.ktor:ktor-html-builder:$ktorVersion")
 
     implementation("org.mongodb:mongo-java-driver:3.9.1")
     implementation("org.litote.kmongo:kmongo:3.9.1")
 
     implementation("ch.qos.logback:logback-classic:1.2.3")
+    implementation("commons-codec:commons-codec:1.5")
 }
 
 tasks.withType<KotlinCompile> {
