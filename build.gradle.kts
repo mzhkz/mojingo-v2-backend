@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    kotlin("jvm") version "1.3.60"
+    kotlin("jvm") version "1.3.61"
     application
 }
 
@@ -13,15 +13,13 @@ application {
 }
 
 repositories {
-//    mavenCentral()
     jcenter()
-//    maven("https://dl.bintray.com/kotlin/kotlinx")
-//    maven("https://kotlin.bintray.com/ktor")
 }
 
 dependencies {
     val kotlinVersion: String by extra
     val ktorVersion = "1.2.6"
+    val MongoVersion = "3.11.2"
 
     implementation(kotlin("stdlib-jdk8"))
     implementation("io.ktor:ktor-server-netty:$ktorVersion")
@@ -30,8 +28,8 @@ dependencies {
     implementation("io.ktor:ktor-server-host-common:$ktorVersion")
     implementation("io.ktor:ktor-html-builder:$ktorVersion")
 
-    implementation("org.mongodb:mongo-java-driver:3.9.1")
-    implementation("org.litote.kmongo:kmongo:3.9.1")
+    implementation("org.mongodb:mongo-java-driver:$MongoVersion")
+    implementation("org.litote.kmongo:kmongo:$MongoVersion")
 
     implementation("ch.qos.logback:logback-classic:1.2.3")
     implementation("commons-codec:commons-codec:1.5")

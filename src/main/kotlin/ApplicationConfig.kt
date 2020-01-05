@@ -6,6 +6,7 @@ object ApplicationConfig {
 
     /** 環境変数名を取得*/
     val env: (String) -> String = { value ->
+        println("${ENV_PREFIX}_${value}")
         "${ENV_PREFIX}_${value}"
     }
 
@@ -27,12 +28,12 @@ object ApplicationConfig {
 
     /** Mongoデータベースのホスト*/
     val DATABASE_HOST by lazy {
-        System.getenv(env("DATABASE_HOST")) ?: "localhost"
+        System.getenv(env("DATABASE_HOST"))
     }
 
     /** Mongoデータベースのポート */
     val DATABASE_PORT by lazy {
-        System.getenv(env("DATABASE_PORT")) ?: "27017"
+        System.getenv(env("DATABASE_PORT"))
     }
 
     /** Mongoデータベース名 */
@@ -42,7 +43,7 @@ object ApplicationConfig {
 
     /** Mongoデータベースのユーザ */
     val DATABASE_USER by lazy {
-        System.getenv(env("DATABASE_USER")) ?: "root"
+        System.getenv(env("DATABASE_USER"))
     }
 
     /** MySQLデータベースのパスワード */

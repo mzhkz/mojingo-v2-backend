@@ -92,7 +92,15 @@ fun Application.module(testing: Boolean = false) {
 
     routing {
         get("/") {
-           context.respond("Hello World!!")
+           context.respondHtml {
+               head {
+                   title { +"WordLink" }
+               }
+               body {
+                   h2 { +"Hello WordLink!" }
+                   p { +"test page."}
+               }
+           }
         }
     }
 }

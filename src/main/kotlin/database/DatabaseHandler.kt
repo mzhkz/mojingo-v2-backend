@@ -6,7 +6,6 @@ import com.mongodb.MongoCredential
 import com.mongodb.ServerAddress
 import com.mongodb.client.MongoDatabase
 import org.litote.kmongo.KMongo
-import java.net.InetAddress
 
 object DatabaseHandler {
     lateinit var clientSession: MongoClient
@@ -17,7 +16,7 @@ object DatabaseHandler {
      */
     fun initialize() {
         clientSession = KMongo.createClient(
-            addr = ServerAddress("", 1),
+            addr = ServerAddress(ApplicationConfig.DATABASE_HOST, ApplicationConfig.DATABASE_PORT.toInt()),
             credentialsList = listOf(MongoCredential.createCredential(
                 ApplicationConfig.DATABASE_USER,
                 ApplicationConfig.DATABASE_NAME,
