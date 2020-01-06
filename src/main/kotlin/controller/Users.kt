@@ -21,7 +21,7 @@ object Users {
             .databaseSession
             .getCollection<User.Model>("users")
 
-        session.find().map { model ->
+        users.addAll(session.find().map { model ->
             User(
                 id = model._id,
                 firstName = model.first_name,
@@ -31,7 +31,7 @@ object Users {
                 createdAt = Date(model.created_at * 1000),
                 updatedAt = Date(model.updated_at * 1000)
             )
-        }
+        })
     }
 }
 

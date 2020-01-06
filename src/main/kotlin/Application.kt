@@ -1,6 +1,7 @@
 package com.aopro.wordlink
 
 import com.aopro.wordlink.controller.Users
+import com.aopro.wordlink.controller.Words
 import com.aopro.wordlink.controller.authentication
 import com.aopro.wordlink.controller.user
 import com.aopro.wordlink.database.DatabaseHandler
@@ -27,6 +28,7 @@ fun Application.module(testing: Boolean = false) {
 
     DatabaseHandler.initialize() //データベース初期化
     Users.initialize() //ユーザー読み込み
+    Words.initialize()
 
     install(Locations)
 
@@ -43,9 +45,22 @@ fun Application.module(testing: Boolean = false) {
         method(HttpMethod.Post)
 
         header("X-Requested-With")
+        header("X-Token")
+
         allowCredentials = true
 
         val whitelist = mutableListOf<String>()
+
+        if (ApplicationConfig.PRODUCTION) {
+            whitelist.addAll(
+                listOf(ApplicationConfig.FRONTEND_APP_DOMAIN)
+            )
+        } else {
+            whitelist.addAll(
+                listOf("localhost:5051")
+            )
+        }
+
         whitelist.forEach { addr -> host(addr, schemes = listOf("http", "https")) }
     }
 

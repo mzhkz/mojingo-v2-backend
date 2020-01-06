@@ -10,7 +10,7 @@ class Word(
     @Expose private val categoryId: String,
     @Expose val createdAt: Date,
     @Expose val updatedAt: Date,
-    @Expose private val lastEditedId: String) {
+    @Expose private val updatedBy: String) {
 
     data class Model(
         val _id: String = "",
@@ -19,6 +19,6 @@ class Word(
         val category_id: String = "",
         val created_at: Long = 0L,
         val updated_at: Long = 0L,
-        val last_edit_id: String = ""
+        val updated_by: String = ""
     )
 }
