@@ -1,15 +1,16 @@
 package com.aopro.wordlink.database.model
 
+import com.google.gson.annotations.Expose
 import java.util.*
 
 class Word(
-    val id: String,
-    val name: String,
-    val mean: String,
-    private val categoryId: String,
-    val createdAt: Date,
-    val updatedAt: Date,
-    private val lastEditedId: String) {
+    @Expose val id: String,
+    @Expose val name: String,
+    @Expose val mean: String,
+    @Expose private val categoryId: String,
+    @Expose val createdAt: Date,
+    @Expose val updatedAt: Date,
+    @Expose private val lastEditedId: String) {
 
     data class Model(
         val _id: String = "",

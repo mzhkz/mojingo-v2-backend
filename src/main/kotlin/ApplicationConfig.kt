@@ -10,6 +10,10 @@ object ApplicationConfig {
         "${ENV_PREFIX}_${value}"
     }
 
+    val PRODUCTION by lazy {
+        System.getenv(env("PRODUCTION"))?.toBoolean() ?: false
+    }
+
     val RUNNNING_PROFUCTION by lazy {
         System.getenv(env("PRODUCTION"))
     }
@@ -46,8 +50,13 @@ object ApplicationConfig {
         System.getenv(env("DATABASE_USER"))
     }
 
-    /** MySQLデータベースのパスワード */
+    /** Mongoデータベースのパスワード */
     val DATABASE_PASSWORD by lazy {
         System.getenv(env("DATABASE_PASSWORD"))
+    }
+
+    /** JWT Secret */
+    val JWT_SECRET by lazy {
+        System.getenv(env("JWT_SECRET"))
     }
 }

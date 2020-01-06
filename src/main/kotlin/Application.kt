@@ -1,32 +1,42 @@
 package com.aopro.wordlink
 
+import com.aopro.wordlink.controller.Users
+import com.aopro.wordlink.controller.authentication
+import com.aopro.wordlink.controller.user
 import com.aopro.wordlink.database.DatabaseHandler
 import io.ktor.application.Application
-import io.ktor.application.call
 import io.ktor.application.install
 import io.ktor.features.*
+import io.ktor.gson.gson
 import io.ktor.html.respondHtml
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.locations.Locations
 import io.ktor.request.header
 import io.ktor.response.header
-import io.ktor.response.respond
 import io.ktor.response.respondText
-import io.ktor.routing.get
-import io.ktor.routing.routing
+import io.ktor.routing.Routing
 import kotlinx.html.*
 import org.apache.commons.codec.digest.DigestUtils
 import org.slf4j.event.Level
+import java.text.DateFormat
 
 fun main(args: Array<String>): Unit = io.ktor.server.netty.EngineMain.main(args)
 
 fun Application.module(testing: Boolean = false) {
 
     DatabaseHandler.initialize() //データベース初期化
-
+    Users.initialize() //ユーザー読み込み
 
     install(Locations)
+
+    install(ContentNegotiation) {
+        gson {
+            setDateFormat(DateFormat.LONG)
+            setPrettyPrinting()
+            excludeFieldsWithoutExposeAnnotation()
+        }
+    }
 
     install(CORS) {
         method(HttpMethod.Get)
@@ -90,18 +100,9 @@ fun Application.module(testing: Boolean = false) {
         }
     }
 
-    routing {
-        get("/") {
-           context.respondHtml {
-               head {
-                   title { +"WordLink" }
-               }
-               body {
-                   h2 { +"Hello WordLink!" }
-                   p { +"test page."}
-               }
-           }
-        }
+    install(Routing) {
+        user()
+        authentication()
     }
 }
 

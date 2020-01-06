@@ -7,7 +7,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 /** StringからDateに変換 */
-fun String.toDate(dateFormat: SimpleDateFormat = defaultDateFormat): Date {
+fun String.toDate(dateFormat: SimpleDateFormat = DefaultDateFormat): Date {
     return dateFormat.parse(this)
 }
 

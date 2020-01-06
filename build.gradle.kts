@@ -25,6 +25,7 @@ dependencies {
     implementation("io.ktor:ktor-server-netty:$ktorVersion")
     implementation("io.ktor:ktor-locations:$ktorVersion")
     implementation("io.ktor:ktor-gson:$ktorVersion")
+    implementation("io.ktor:ktor-auth:$ktorVersion")
     implementation("io.ktor:ktor-server-host-common:$ktorVersion")
     implementation("io.ktor:ktor-html-builder:$ktorVersion")
 
@@ -33,6 +34,7 @@ dependencies {
 
     implementation("ch.qos.logback:logback-classic:1.2.3")
     implementation("commons-codec:commons-codec:1.5")
+    implementation("com.auth0:java-jwt:3.8.2")
 }
 
 tasks.withType<KotlinCompile> {

@@ -19,4 +19,5 @@
 |WORDLINK_DATABASE_NAME|string|データベース接続の名前|wordlink|
 |WORDLINK_DATABASE_USER|string|データベース認証のユーザ名|application|
 |WORDLINK_DATABASE_PASSWORD|string|データベース認証のパスワード|wordlink123|
+|WORDLINK_JWT_SECRET|string|JsonWebTokenの秘密文字列|****|
 
