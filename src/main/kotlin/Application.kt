@@ -1,9 +1,6 @@
 package com.aopro.wordlink
 
-import com.aopro.wordlink.controller.Users
-import com.aopro.wordlink.controller.Words
-import com.aopro.wordlink.controller.authentication
-import com.aopro.wordlink.controller.user
+import com.aopro.wordlink.controller.*
 import com.aopro.wordlink.database.DatabaseHandler
 import io.ktor.application.Application
 import io.ktor.application.install
@@ -27,6 +24,7 @@ fun main(args: Array<String>): Unit = io.ktor.server.netty.EngineMain.main(args)
 fun Application.module(testing: Boolean = false) {
 
     DatabaseHandler.initialize() //データベース初期化
+    Categories.initialize()
     Users.initialize() //ユーザー読み込み
     Words.initialize()
 
@@ -116,8 +114,9 @@ fun Application.module(testing: Boolean = false) {
     }
 
     install(Routing) {
-        user()
         authentication()
+        user()
+        category()
     }
 }
 

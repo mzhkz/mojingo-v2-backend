@@ -51,3 +51,9 @@ val ensureIdElemments by lazy {
     }
     mutableList.plus((1..9).map { it.toString() })
 }
+
+fun randomBytes(): ByteArray {
+    val random = ByteArray(128)
+    Random().nextBytes(random) //CentOS
+    return random
+}

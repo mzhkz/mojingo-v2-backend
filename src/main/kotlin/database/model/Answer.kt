@@ -5,8 +5,8 @@ import java.util.*
 
 class Answer(
     @Expose val id: String,
-    private val userId: String,
-    private val wordId: String,
+    @Expose val user: User,
+    @Expose val word: Word,
     @Expose val createdAt: Date,
     @Expose val updatedAt: Date,
     @Expose val histories: MutableList<History>) {
@@ -21,10 +21,12 @@ class Answer(
     )
 
     class History(
+        @Expose val impactReview: String,
         @Expose val result: Int,
-        @Expose  val postAt: Date) {
+        @Expose val postAt: Date) {
 
         data class Model(
+            val impact_review: String,
             val result: Int = 0,
             val post_at: Long = 0L
         )
