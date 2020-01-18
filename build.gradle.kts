@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "com.aopro"
-version = "0.1"
+version = "0.1.1"
 
 application {
     mainClassName = "io.ktor.server.netty.EngineMain"

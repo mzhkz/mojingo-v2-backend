@@ -23,7 +23,7 @@ class Category(@Expose val id: String,
         @JvmStatic
         fun NotExistObject() =
             Category(
-                id = "not_exist_${DigestUtils.sha1Hex(randomBytes()).substring(0,7)}",
+                id = "not_exist_${DigestUtils.shaHex(randomBytes()).substring(0,7)}",
                 name = "NOT_EXIST_CATEGORY",
                 description = "",
                 createdAt = Date(0L),
