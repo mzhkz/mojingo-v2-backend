@@ -31,7 +31,7 @@ object Words {
                 id = model._id,
                 name = model.name,
                 mean = model.mean,
-                category = Categories.categories().find { category -> category.id == model.category_id } ?: Category.NotExistObject(),
+                category = Categories.categories().find { category -> category.id == model.category_id } ?: Category.notExistObject(),
                 createdAt = Date(model.created_at * 1000),
                 updatedAt = Date(model.updated_at * 1000)
             )

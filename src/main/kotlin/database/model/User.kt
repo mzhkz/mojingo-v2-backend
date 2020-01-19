@@ -1,6 +1,8 @@
 package com.aopro.wordlink.database.model
 
+import com.aopro.wordlink.utilities.randomBytes
 import com.google.gson.annotations.Expose
+import org.apache.commons.codec.digest.DigestUtils
 import java.util.*
 
 class User(@Expose val id: String,
@@ -10,6 +12,20 @@ class User(@Expose val id: String,
            @Expose val accessLevel: Int = 0,
            @Expose val createdAt: Date,
            @Expose val updatedAt: Date) {
+
+    companion object {
+        @JvmStatic
+        fun notExistObject() =
+            User(
+                id = "not_exist_${DigestUtils.shaHex(randomBytes()).substring(0,7)}",
+                firstName = "NOT_EXIST_USER",
+                lastName = "",
+                createdAt = Date(0L),
+                updatedAt = Date(0L),
+                accessLevel = 0,
+                encryptedPassword = ""
+            )
+    }
 
     data class Model(
         val _id: String = "",

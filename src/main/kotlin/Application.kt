@@ -12,7 +12,7 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.locations.Locations
 import io.ktor.request.header
 import io.ktor.response.header
-import io.ktor.response.respondText
+import io.ktor.response.respond
 import io.ktor.routing.Routing
 import kotlinx.html.*
 import org.apache.commons.codec.digest.DigestUtils
@@ -32,6 +32,7 @@ fun Application.module(testing: Boolean = false) {
 
     install(ContentNegotiation) {
         gson {
+            serializeNulls()
             setDateFormat(DateFormat.LONG)
             setPrettyPrinting()
             excludeFieldsWithoutExposeAnnotation()
@@ -76,15 +77,15 @@ fun Application.module(testing: Boolean = false) {
 
     install(StatusPages) {
         exception<AuthorizationException> { cause ->
-            context.respondText(cause.localizedMessage, status = HttpStatusCode.Unauthorized)
+            context.respond(ResponseInfo(result = HttpStatusCode.Unauthorized.value, message = cause.localizedMessage))
         }
 
         exception<NotFoundException> { cause ->
-            context.respondText(cause.localizedMessage, status = HttpStatusCode.NotFound)
+            context.respond(ResponseInfo(result = HttpStatusCode.NotFound.value, message = cause.localizedMessage))
         }
 
         exception<BadRequestException> { cause ->
-            context.respondText(cause.localizedMessage, status = HttpStatusCode.BadRequest)
+            context.respond(ResponseInfo(result = HttpStatusCode.BadRequest.value, message = cause.localizedMessage))
         }
 
         exception<Exception> { cause ->
@@ -94,7 +95,7 @@ fun Application.module(testing: Boolean = false) {
 
             if (context.request.header("X-Requested-With").equals("XMLHttpRequest")) {
                 context.response.header("X-Server-Error-Hash", hash) //ハッシュを含む
-                context.respondText("サーバー側でエラーが発生しました", status = HttpStatusCode.InternalServerError)
+                context.respond(ResponseInfo(result = 500, message = "サーバー側でエラーが発生しました"))
             } else {
                 context.respondHtml(block = {
                     head {
@@ -119,6 +120,9 @@ fun Application.module(testing: Boolean = false) {
         category()
     }
 }
+
+
+data class ResponseInfo(val data: Any? = null, val result: Int = HttpStatusCode.OK.value, val message: String = "")
 
 
 class AuthorizationException(error: String = "") : RuntimeException(error)

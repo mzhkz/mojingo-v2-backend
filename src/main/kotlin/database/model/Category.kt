@@ -19,9 +19,8 @@ class Category(@Expose val id: String,
                @Expose val private: Boolean) {
 
     companion object {
-
         @JvmStatic
-        fun NotExistObject() =
+        fun notExistObject() =
             Category(
                 id = "not_exist_${DigestUtils.shaHex(randomBytes()).substring(0,7)}",
                 name = "NOT_EXIST_CATEGORY",

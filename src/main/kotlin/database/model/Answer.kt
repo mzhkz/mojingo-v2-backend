@@ -21,7 +21,7 @@ class Answer(
     )
 
     class History(
-        @Expose val impactReview: String,
+        @Expose val impactReview: Review,
         @Expose val result: Int,
         @Expose val postAt: Date) {
 
