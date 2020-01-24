@@ -27,6 +27,7 @@ fun Application.module(testing: Boolean = false) {
     Categories.initialize()
     Users.initialize() //ユーザー読み込み
     Words.initialize()
+    Reviews.initialize() //復習テストを読み込み
 
     install(Locations)
 

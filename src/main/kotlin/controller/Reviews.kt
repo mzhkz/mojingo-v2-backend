@@ -1,10 +1,12 @@
 package com.aopro.wordlink.controller
 
 import com.aopro.wordlink.database.DatabaseHandler
-import com.aopro.wordlink.database.model.Category
 import com.aopro.wordlink.database.model.Review
 import com.aopro.wordlink.database.model.Word
+import com.aopro.wordlink.utilities.ensureIdElemments
 import com.mongodb.client.MongoCollection
+import io.ktor.locations.Location
+import io.ktor.routing.Route
 import org.litote.kmongo.getCollection
 import java.util.*
 
@@ -33,5 +35,27 @@ object Reviews {
             )
         })
     }
+
+    /** 重複のないIDを生成します。*/
+    tailrec fun generateNoDuplicationId(): String {
+        val length = 8
+        var builder = ""
+        val elements = ensureIdElemments.toMutableList()
+        for (i in 0..length) {
+            builder += elements.random()
+        }
+
+        return if (Reviews.reviews.filter { category -> category.id == builder }.isEmpty()) builder else generateNoDuplicationId()
+    }
+}
+
+@Location("/review")
+class ReviewRoute {
+
+    @Location("/:target")
+    data class View(val target: String)
+}
+
+fun Route.reviews() {
 
 }
