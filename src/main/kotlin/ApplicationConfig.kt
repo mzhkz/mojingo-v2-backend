@@ -55,6 +55,11 @@ object ApplicationConfig {
         System.getenv(env("DATABASE_PASSWORD"))
     }
 
+    /** フロントエンドのドメイン */
+    val FRONTEND_DOMAIN by lazy {
+        System.getenv(env("FRONTEND_DOMAIN"))
+    }
+
     /** JWT Secret */
     val JWT_SECRET by lazy {
         System.getenv(env("JWT_SECRET"))

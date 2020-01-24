@@ -24,10 +24,11 @@ fun main(args: Array<String>): Unit = io.ktor.server.netty.EngineMain.main(args)
 fun Application.module(testing: Boolean = false) {
 
     DatabaseHandler.initialize() //データベース初期化
-    Categories.initialize()
+    Categories.initialize() //カテゴリーを読み込み
     Users.initialize() //ユーザー読み込み
-    Words.initialize()
+    Words.initialize()  // 単語データ読み込み
     Reviews.initialize() //復習テストを読み込み
+    Answers.initialize() //回答データ読み込み
 
     install(Locations)
 
@@ -118,7 +119,10 @@ fun Application.module(testing: Boolean = false) {
     install(Routing) {
         authentication()
         user()
+        word()
         category()
+        answers()
+        reviews()
     }
 }
 
