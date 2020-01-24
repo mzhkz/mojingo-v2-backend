@@ -1,0 +1,8 @@
+node_modules
+.circleci
+.gradle
+.idea
+build
+logs
+cache
+Dockerfile

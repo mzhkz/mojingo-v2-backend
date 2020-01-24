@@ -17,15 +17,6 @@ object DatabaseHandler {
      */
     fun initialize() {
         clientSession = KMongo.createClient(MongoClientURI("mongodb://application:wordlink123@localhost:27018/?authMechanism=SCRAM-SHA-1&authSource=admin"))
-//        clientSession = KMongo.createClient(
-//            addr = ServerAddress(ApplicationConfig.DATABASE_HOST, ApplicationConfig.DATABASE_PORT.toInt()),
-//            credentialsList = listOf(MongoCredential.createScramSha1Credential(
-//                ApplicationConfig.DATABASE_USER,
-//                ApplicationConfig.DATABASE_NAME,
-//                ApplicationConfig.DATABASE_PASSWORD.toCharArray())
-//            )
-//        )
-
         databaseSession = clientSession.getDatabase("wordlink")
     }
 

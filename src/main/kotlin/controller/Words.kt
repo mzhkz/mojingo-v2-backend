@@ -63,6 +63,7 @@ class WordRoute {
 fun Route.word() {
 
     post<WordRoute.Import> {
+        context.request.tokenAuthentication(2) //管理者レベルからアクセス可能
         val payload = context.receive<WordRoute.Import.Payload>()
         val category = Categories.categories().find { category -> category.id == payload.categoryId } ?: throw BadRequestException("INVALID CATEGORY_ID")
 

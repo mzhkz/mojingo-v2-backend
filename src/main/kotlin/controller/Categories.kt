@@ -77,7 +77,7 @@ object Categories {
                 Category.Model::name setTo  category.name,
                 Category.Model::description setTo  category.description,
                 Category.Model::private setTo  category.private,
-                Category.Model::updated_at setTo  Date
+                Category.Model::updated_at setTo Date
                     .from(LocalDateTime
                         .now()
                         .atZone(DefaultZone)
@@ -112,6 +112,8 @@ fun Route.category() {
     }
 
     post<CategoryRoute.Create> {
+        context.request.tokenAuthentication(2) //管理者レベルからアクセス可能
+
         val payload = context.receive(CategoryRoute.Create.Payload::class)
 
         val instance = Category(

@@ -1,6 +1,8 @@
 package com.aopro.wordlink.database.model
 
+import com.aopro.wordlink.utilities.randomBytes
 import com.google.gson.annotations.Expose
+import org.apache.commons.codec.digest.DigestUtils
 import java.util.*
 
 class Review(
@@ -11,6 +13,20 @@ class Review(
     @Expose val answers: MutableList<Answer>,
     @Expose val createdAt: Date,
     @Expose val updatedAt: Date) {
+
+    companion object {
+        @JvmStatic
+        fun notExistObject() =
+            Review(
+                id = "not_exist_${DigestUtils.shaHex(randomBytes()).substring(0,7)}",
+                name = "NOT_EXIST_CATEGORY",
+                entries = mutableListOf(),
+                answers = mutableListOf(),
+                description = "",
+                createdAt = Date(0L),
+                updatedAt = Date(0L)
+            )
+    }
 
 
     data class Model(

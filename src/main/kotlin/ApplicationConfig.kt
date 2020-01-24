@@ -11,11 +11,11 @@ object ApplicationConfig {
     }
 
     val PRODUCTION by lazy {
-        System.getenv(env("PRODUCTION"))?.toBoolean() ?: false
+        KTOR_ENV == "prod"
     }
 
-    val RUNNNING_PROFUCTION by lazy {
-        System.getenv(env("PRODUCTION"))
+    val KTOR_ENV by lazy {
+        System.getenv(env("KTOR_ENV"))?: "dev"
     }
 
     val TOP_LEVEL_APP_DOMAIN by lazy {
