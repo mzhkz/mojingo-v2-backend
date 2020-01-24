@@ -1,10 +1,15 @@
 package com.aopro.wordlink.controller
 
+import com.aopro.wordlink.BadRequestException
 import com.aopro.wordlink.database.DatabaseHandler
 import com.aopro.wordlink.database.model.User
 import com.aopro.wordlink.utilities.DefaultZone
+import com.aopro.wordlink.utilities.fromBase64
+import com.aopro.wordlink.utilities.toBase64
 import com.mongodb.client.MongoCollection
 import io.ktor.locations.Location
+import io.ktor.locations.post
+import io.ktor.request.receive
 import io.ktor.routing.Route
 import org.apache.commons.codec.digest.DigestUtils
 import org.litote.kmongo.eq
@@ -29,6 +34,7 @@ object Users {
         users.addAll(session.find().map { model ->
             User(
                 id = model._id,
+                username = model.username,
                 firstName = model.first_name,
                 lastName = model.last_name,
                 encryptedPassword = model.encrypted_password,
@@ -43,6 +49,7 @@ object Users {
     fun insertUser(user: User) {
         session.insertOne(User.Model(
             _id = user.id,
+            username = user.username,
             first_name = user.firstName,
             last_name = user.lastName,
             created_at = user.createdAt.time,
@@ -57,6 +64,7 @@ object Users {
         users.forEach { usr ->
             session.updateOne(
                 User.Model::_id eq usr.id,
+                User.Model::username setTo usr.username,
                 User.Model::encrypted_password setTo usr.encryptedPassword,
                 User.Model::first_name setTo usr.firstName,
                 User.Model::last_name setTo usr.lastName,

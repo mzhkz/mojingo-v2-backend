@@ -6,6 +6,7 @@ import org.apache.commons.codec.digest.DigestUtils
 import java.util.*
 
 class User(@Expose val id: String,
+           @Expose val username: String,
            val encryptedPassword: String,
            @Expose val firstName: String,
            @Expose val lastName: String,
@@ -18,8 +19,9 @@ class User(@Expose val id: String,
         fun notExistObject() =
             User(
                 id = "not_exist_${DigestUtils.shaHex(randomBytes()).substring(0,7)}",
-                firstName = "NOT_EXIST_USER",
-                lastName = "",
+                username = "NOT_EXIST_USER",
+                firstName = "not",
+                lastName = "exist",
                 createdAt = Date(0L),
                 updatedAt = Date(0L),
                 accessLevel = 0,
@@ -29,6 +31,7 @@ class User(@Expose val id: String,
 
     data class Model(
         val _id: String = "",
+        val username: String = "",
         val encrypted_password: String = "",
         val first_name: String = "",
         val last_name: String = "",

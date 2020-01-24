@@ -2,8 +2,10 @@ package com.aopro.wordlink.controller
 
 import com.aopro.wordlink.ApplicationConfig
 import com.aopro.wordlink.AuthorizationException
+import com.aopro.wordlink.BadRequestException
 import com.aopro.wordlink.database.model.User
 import com.aopro.wordlink.utilities.DefaultZone
+import com.aopro.wordlink.utilities.fromBase64
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import io.ktor.locations.Location
@@ -23,7 +25,7 @@ class Authentication {
 
     @Location("credential")
     class Credential {
-        data class Payload(val id: String = "", val password: String = "")
+        data class Payload(val base64Email: String = "", val base64Password: String = "")
     }
 
     @Location("logout")
@@ -34,19 +36,12 @@ class Authentication {
 fun Route.authentication() {
     post<Authentication.Credential> {
         val payload = context.receive(Authentication.Credential.Payload::class)
+        val requestEmail = payload.base64Email.fromBase64()
+        val target = Users.users().find { usr -> usr.id == requestEmail } ?: throw BadRequestException("ユーザーネーム、またはパスワードが間違っています。")
 
-        val user = Users.users().find { user -> user.id == payload.id } //same id
+        if (isSamePassword(payload.base64Password.fromBase64(), target.encryptedPassword)) {
 
-        if (user != null && isSamePassword(payload.password, user.encryptedPassword)) {
-            context.response.cookies.append(
-                name = "_SESSION",
-                value = generateAuthenticationToken(user),
-                expires = LocalDateTime.now().plusMonths(1).atZone(DefaultZone).toGMTDate(),
-                httpOnly = true,
-                path = "/",
-                domain = if (ApplicationConfig.PRODUCTION) ApplicationConfig.BACKEND_APP_DOMAIN else "localhost"
-            )
-        }
+        } else throw BadRequestException("ユーザーネーム、またはパスワードが間違っています。")
     }
 
     post<Authentication.Logout> {
