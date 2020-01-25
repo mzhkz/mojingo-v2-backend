@@ -11,7 +11,10 @@ import io.ktor.locations.Location
 import io.ktor.locations.post
 import io.ktor.request.receive
 import io.ktor.routing.Route
+import org.litote.kmongo.eq
 import org.litote.kmongo.getCollection
+import org.litote.kmongo.setTo
+import org.litote.kmongo.updateOne
 import java.util.*
 
 object Words {
@@ -48,8 +51,32 @@ object Words {
 
         return if (words.filter { word -> word.id == temp }.isEmpty()) temp else generateId()
     }
-}
 
+
+    /**　データベースにデータを挿入する*/
+    fun insertWord(word: Word) {
+        session.insertOne(Word.Model(
+            _id = word.id,
+            name = word.name,
+            mean = word.mean,
+            category_id = word.category.id,
+            created_at = word.createdAt.time,
+            updated_at = word.updatedAt.time
+        ))
+    }
+
+    /** データを更新する */
+    fun updateWord(word: Word) {
+        session.updateOne(
+            Word.Model::_id eq word.id,
+            Word.Model::name setTo word.name,
+            Word.Model::mean setTo word.mean,
+            Word.Model::category_id setTo word.category.id,
+            Word.Model::created_at setTo word.createdAt.time,
+            Word.Model::updated_at setTo word.updatedAt.time
+        )
+    }
+}
 @Location("/word")
 class WordRoute {
 

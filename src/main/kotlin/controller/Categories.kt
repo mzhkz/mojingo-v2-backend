@@ -131,6 +131,8 @@ fun Route.category() {
             category = instance
         )
 
+        Categories.insertCategory(instance)
+
 
     }
 }
