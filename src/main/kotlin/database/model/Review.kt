@@ -1,5 +1,6 @@
 package com.aopro.wordlink.database.model
 
+import com.aopro.wordlink.controller.Users
 import com.aopro.wordlink.utilities.randomBytes
 import com.google.gson.annotations.Expose
 import org.apache.commons.codec.digest.DigestUtils
@@ -9,6 +10,7 @@ class Review(
     @Expose val id: String,
     @Expose val name: String,
     @Expose val description: String,
+    @Expose val owner: User,
     @Expose val entries: MutableList<Word>,
     @Expose val answers: MutableList<Answer>,
     @Expose val createdAt: Date,
@@ -23,6 +25,7 @@ class Review(
                 entries = mutableListOf(),
                 answers = mutableListOf(),
                 description = "",
+                owner = User.notExistObject(),
                 createdAt = Date(0L),
                 updatedAt = Date(0L)
             )
@@ -33,6 +36,7 @@ class Review(
         val _id: String = "",
         val name: String = "",
         val description: String = "",
+        val owner_id: String  = "",
         val entries: MutableList<String>,
         val answers: MutableList<String>,
         val createdAt: Long = 0L,

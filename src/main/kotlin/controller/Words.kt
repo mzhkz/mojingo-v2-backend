@@ -5,6 +5,7 @@ import com.aopro.wordlink.database.DatabaseHandler
 import com.aopro.wordlink.database.model.Category
 import com.aopro.wordlink.database.model.Word
 import com.aopro.wordlink.database.model.readWordCSV
+import com.aopro.wordlink.utilities.DefaultZone
 import com.aopro.wordlink.utilities.ensureIdElemments
 import com.mongodb.client.MongoCollection
 import io.ktor.locations.Location
@@ -15,6 +16,7 @@ import org.litote.kmongo.eq
 import org.litote.kmongo.getCollection
 import org.litote.kmongo.setTo
 import org.litote.kmongo.updateOne
+import java.time.LocalDateTime
 import java.util.*
 
 object Words {
@@ -73,7 +75,9 @@ object Words {
             Word.Model::mean setTo word.mean,
             Word.Model::category_id setTo word.category.id,
             Word.Model::created_at setTo word.createdAt.time,
-            Word.Model::updated_at setTo word.updatedAt.time
+            Word.Model::updated_at setTo Date.from(
+                LocalDateTime.now().atZone(DefaultZone).toInstant()
+            ).time
         )
     }
 }

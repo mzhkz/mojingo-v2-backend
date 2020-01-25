@@ -1,12 +1,18 @@
 package com.aopro.wordlink.controller
 
+import com.aopro.wordlink.AuthorizationException
+import com.aopro.wordlink.BadRequestException
+import com.aopro.wordlink.ResponseInfo
 import com.aopro.wordlink.database.DatabaseHandler
 import com.aopro.wordlink.database.model.Review
+import com.aopro.wordlink.database.model.User
 import com.aopro.wordlink.database.model.Word
 import com.aopro.wordlink.utilities.DefaultZone
 import com.aopro.wordlink.utilities.ensureIdElemments
 import com.mongodb.client.MongoCollection
 import io.ktor.locations.Location
+import io.ktor.locations.get
+import io.ktor.response.respond
 import io.ktor.routing.Route
 import io.ktor.routing.get
 import org.litote.kmongo.eq
@@ -32,6 +38,7 @@ object Reviews {
                 id = model._id,
                 name = model.name,
                 description = model.description,
+                owner = Users.users().find { usr -> usr.id == model._id } ?: User.notExistObject(),
                 entries = model.entries
                     .map { ent -> Words.words().find { word ->  word.id == ent} ?: Word.notExistObject() }
                     .toMutableList(),
@@ -91,9 +98,23 @@ object Reviews {
 class ReviewRoute {
 
     @Location("/:target")
-    data class View(val target: String)
+    data class View(val target: String) {
+    }
 }
 
 fun Route.reviews() {
+
+    /** 指定されたユーザーの回答結果を取得する。ただし、他のユーザーのデータを取得する場合は、アクセスレベル２以上が必要。*/
+    get <ReviewRoute.View>{ query ->
+        val targetUser = Users.users().find { user -> query.target == user.id } ?: throw BadRequestException("指定されたユーザーが見つかりません")
+        val authUser = context.request.tokenAuthentication()
+
+        if (targetUser.id != authUser.id && authUser.accessLevel < 2) throw AuthorizationException("権限が足りません")
+
+        context.respond(ResponseInfo(
+            data = Reviews.reviews().filter { review -> review.owner.id == targetUser.id }
+        ))
+
+    }
 
 }
