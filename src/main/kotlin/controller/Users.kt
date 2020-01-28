@@ -1,15 +1,10 @@
 package com.aopro.wordlink.controller
 
-import com.aopro.wordlink.BadRequestException
 import com.aopro.wordlink.database.DatabaseHandler
 import com.aopro.wordlink.database.model.User
 import com.aopro.wordlink.utilities.DefaultZone
-import com.aopro.wordlink.utilities.fromBase64
-import com.aopro.wordlink.utilities.toBase64
 import com.mongodb.client.MongoCollection
 import io.ktor.locations.Location
-import io.ktor.locations.post
-import io.ktor.request.receive
 import io.ktor.routing.Route
 import org.apache.commons.codec.digest.DigestUtils
 import org.litote.kmongo.eq
@@ -89,4 +84,5 @@ fun Route.user() {
 
 }
 
+/** ハッシュ化したパスワードが一致するかどうか*/
 fun isSamePassword(original: String, encrypted: String) = DigestUtils.sha256Hex(original) == encrypted

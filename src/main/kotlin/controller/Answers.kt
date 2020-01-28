@@ -1,11 +1,13 @@
 package com.aopro.wordlink.controller
 
 import com.aopro.wordlink.database.DatabaseHandler
-import com.aopro.wordlink.database.model.*
+import com.aopro.wordlink.database.model.Answer
+import com.aopro.wordlink.database.model.Review
+import com.aopro.wordlink.database.model.User
+import com.aopro.wordlink.database.model.Word
 import com.aopro.wordlink.utilities.DefaultZone
 import com.aopro.wordlink.utilities.ensureIdElemments
 import com.mongodb.client.MongoCollection
-import io.ktor.locations.Location
 import io.ktor.routing.Route
 import org.litote.kmongo.eq
 import org.litote.kmongo.getCollection
@@ -55,7 +57,7 @@ object Answers {
         for (i in 0..length) {
             builder += elements.random()
         }
-        return if (answers.filter { answer -> answer.id == builder }.isEmpty()) builder else generateNoDuplicationId()
+        return if (answers.none { answer -> answer.id == builder }) builder else generateNoDuplicationId()
     }
 
     /** 回答をデータベースに記録*/

@@ -13,6 +13,7 @@ class Review(
     @Expose val owner: User,
     @Expose val entries: MutableList<Word>,
     @Expose val answers: MutableList<Answer>,
+    @Expose val finished: Boolean, //問題の間違えの確認など、すべてのタスクが完了したかどうか。
     @Expose val createdAt: Date,
     @Expose val updatedAt: Date) {
 
@@ -24,6 +25,7 @@ class Review(
                 name = "NOT_EXIST_CATEGORY",
                 entries = mutableListOf(),
                 answers = mutableListOf(),
+                finished = false,
                 description = "",
                 owner = User.notExistObject(),
                 createdAt = Date(0L),
@@ -39,6 +41,7 @@ class Review(
         val owner_id: String  = "",
         val entries: MutableList<String>,
         val answers: MutableList<String>,
+        val finished: Boolean = false,
         val createdAt: Long = 0L,
         val updatedAt: Long = 0L
     )

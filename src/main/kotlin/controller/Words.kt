@@ -31,9 +31,18 @@ object Words {
             .databaseSession
             .getCollection<Word.Model>("words")
 
+        val cacheHash = hashMapOf<String, Int>()
+
         words.addAll(session.find().map { model ->
+            var cacheMapNumber = cacheHash[model.category_id]
+            if (cacheMapNumber == null) {
+                cacheMapNumber = 1
+                cacheHash[model.category_id] = cacheMapNumber
+            }
+
             Word(
                 id = model._id,
+                number = cacheMapNumber,
                 name = model.name,
                 mean = model.mean,
                 category = Categories.categories().find { category -> category.id == model.category_id } ?: Category.notExistObject(),
@@ -56,15 +65,17 @@ object Words {
 
 
     /**　データベースにデータを挿入する*/
-    fun insertWord(word: Word) {
-        session.insertOne(Word.Model(
-            _id = word.id,
-            name = word.name,
-            mean = word.mean,
-            category_id = word.category.id,
-            created_at = word.createdAt.time,
-            updated_at = word.updatedAt.time
-        ))
+    fun insertWord(words: MutableList<Word>) {
+        words.forEach { word ->
+            session.insertOne(Word.Model(
+                _id = word.id,
+                name = word.name,
+                mean = word.mean,
+                category_id = word.category.id,
+                created_at = word.createdAt.time,
+                updated_at = word.updatedAt.time
+            ))
+        }
     }
 
     /** データを更新する */

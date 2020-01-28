@@ -7,6 +7,7 @@ import java.util.*
 
 class Word(
     @Expose val id: String,
+    @Expose val number: Int,
     @Expose val name: String,
     @Expose val mean: String,
     @Expose val category: Category,
@@ -18,6 +19,7 @@ class Word(
         fun notExistObject() =
             Word(
                 id = "not_exist_${DigestUtils.shaHex(randomBytes()).substring(0,7)}",
+                number = -1, //number of category
                 name = "NOT_EXIST_WORD",
                 mean = "",
                 category = Category.notExistObject(),

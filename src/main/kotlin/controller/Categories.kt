@@ -132,7 +132,8 @@ fun Route.category() {
         )
 
         Categories.insertCategory(instance)
+        Words.insertWord(entries)
 
-
+        context.respond(ResponseInfo(message = "has been successes"))
     }
 }

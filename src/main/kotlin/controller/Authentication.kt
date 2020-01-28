@@ -14,8 +14,6 @@ import io.ktor.request.ApplicationRequest
 import io.ktor.request.header
 import io.ktor.request.receive
 import io.ktor.routing.Route
-import io.ktor.util.date.toGMTDate
-import java.lang.Exception
 import java.time.LocalDateTime
 import java.util.*
 

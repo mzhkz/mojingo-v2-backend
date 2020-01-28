@@ -1,13 +1,10 @@
 package com.aopro.wordlink.database.model
 
-import com.aopro.wordlink.controller.Categories
 import com.aopro.wordlink.controller.Words
 import com.aopro.wordlink.utilities.DefaultZone
 import com.aopro.wordlink.utilities.randomBytes
 import com.google.gson.annotations.Expose
 import org.apache.commons.codec.digest.DigestUtils
-import java.io.File
-import java.nio.charset.Charset
 import java.time.LocalDateTime
 import java.util.*
 
@@ -45,12 +42,13 @@ class Category(@Expose val id: String,
 /** CSVファイルから単語を読み込む*/
 fun readWordCSV(line: MutableList<String>, category: Category): MutableList<Word> {
     val regex = Regex("^(¥¥d),(¥¥w+),(¥¥w+)") //No,Name,Mean
-
+    var assignNumber = 1
     return line.mapNotNull { str ->
         val match = regex.matchEntire(str)
         if (match != null) {
           Word(
               id = Words.generateId(),
+              number = assignNumber++,
               name = match.groupValues[1],
               mean = match.groupValues[2],
               category = category,

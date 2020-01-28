@@ -4,6 +4,7 @@ import com.aopro.wordlink.AuthorizationException
 import com.aopro.wordlink.BadRequestException
 import com.aopro.wordlink.ResponseInfo
 import com.aopro.wordlink.database.DatabaseHandler
+import com.aopro.wordlink.database.model.Answer
 import com.aopro.wordlink.database.model.Review
 import com.aopro.wordlink.database.model.User
 import com.aopro.wordlink.database.model.Word
@@ -12,9 +13,9 @@ import com.aopro.wordlink.utilities.ensureIdElemments
 import com.mongodb.client.MongoCollection
 import io.ktor.locations.Location
 import io.ktor.locations.get
+import io.ktor.locations.post
 import io.ktor.response.respond
 import io.ktor.routing.Route
-import io.ktor.routing.get
 import org.litote.kmongo.eq
 import org.litote.kmongo.getCollection
 import org.litote.kmongo.setTo
@@ -42,7 +43,10 @@ object Reviews {
                 entries = model.entries
                     .map { ent -> Words.words().find { word ->  word.id == ent} ?: Word.notExistObject() }
                     .toMutableList(),
-                answers = mutableListOf(),
+                answers = model.answers
+                    .map { ent -> Answers.answers().find { answer ->  answer.word.id == ent} ?: Answer.notExistObject() }
+                    .toMutableList(),
+                finished = model.finished,
                 createdAt = Date(model.createdAt * 1000),
                 updatedAt = Date(model.updatedAt * 1000)
             )
@@ -69,6 +73,7 @@ object Reviews {
             description = review.description,
             entries = review.entries.map { entry -> entry.id } as MutableList<String>,
             answers = review.answers.map { answer -> answer.id } as MutableList<String>,
+            finished = review.finished,
             updatedAt = review.updatedAt.time,
             createdAt = review.createdAt.time
 
@@ -84,6 +89,7 @@ object Reviews {
                 Review.Model::description setTo review.description,
                 Review.Model::entries setTo review.entries.map { entry -> entry.id } as MutableList<String>,
                 Review.Model::answers setTo review.answers.map { answer -> answer.id } as MutableList<String>,
+                Review::finished setTo review.finished,
                 Review.Model::updatedAt setTo Date
                     .from(
                         LocalDateTime
@@ -99,7 +105,24 @@ class ReviewRoute {
 
     @Location("/:target")
     data class View(val target: String) {
+
+        /** CSRF防止の為、回答専用のセッションを設ける */
+        @Location("/let")
+        class Let {
+
+            /** 回答を記録する。レビューセッションを含めなければいけない */
+            @Location("/mark")
+            class Mark {
+
+                data class Payload(
+                    val result: Int,
+                    val session: String
+                )
+            }
+        }
     }
+
+
 }
 
 fun Route.reviews() {
@@ -114,6 +137,16 @@ fun Route.reviews() {
         context.respond(ResponseInfo(
             data = Reviews.reviews().filter { review -> review.owner.id == targetUser.id }
         ))
+
+    }
+
+    post<ReviewRoute.View.Let> {
+
+    }
+
+
+    post<ReviewRoute.View.Let.Mark> {
+
 
     }
 
