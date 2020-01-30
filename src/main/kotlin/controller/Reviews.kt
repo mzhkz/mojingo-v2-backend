@@ -4,10 +4,7 @@ import com.aopro.wordlink.AuthorizationException
 import com.aopro.wordlink.BadRequestException
 import com.aopro.wordlink.ResponseInfo
 import com.aopro.wordlink.database.DatabaseHandler
-import com.aopro.wordlink.database.model.Answer
-import com.aopro.wordlink.database.model.Review
-import com.aopro.wordlink.database.model.User
-import com.aopro.wordlink.database.model.Word
+import com.aopro.wordlink.database.model.*
 import com.aopro.wordlink.utilities.DefaultZone
 import com.aopro.wordlink.utilities.ensureIdElemments
 import com.mongodb.client.MongoCollection
@@ -99,6 +96,29 @@ object Reviews {
         }
     }
 }
+
+object Markers {
+
+    private val markers: MutableList<Marker> = mutableListOf()
+
+    fun markers() = markers.toMutableList()
+
+    fun initialize() {
+
+    }
+
+    /** マーカーを登録する。*/
+    fun registerMarker(marker: Marker) {
+        markers.add(marker)
+    }
+
+    /** UUIDで運用してみる。 */
+    fun generateSecureId(): String {
+        return UUID.randomUUID().toString().replace('-', '.')
+    }
+
+}
+
 
 @Location("/review")
 class ReviewRoute {

@@ -8,8 +8,8 @@ import java.util.*
 class Word(
     @Expose val id: String,
     @Expose val number: Int,
-    @Expose val name: String,
-    @Expose val mean: String,
+    @Expose var name: String,
+    @Expose var mean: String,
     @Expose val category: Category,
     @Expose val createdAt: Date,
     @Expose val updatedAt: Date) {

@@ -1,6 +1,7 @@
 package com.aopro.wordlink.controller
 
 import com.aopro.wordlink.BadRequestException
+import com.aopro.wordlink.ResponseInfo
 import com.aopro.wordlink.database.DatabaseHandler
 import com.aopro.wordlink.database.model.Category
 import com.aopro.wordlink.database.model.Word
@@ -9,9 +10,12 @@ import com.aopro.wordlink.utilities.DefaultZone
 import com.aopro.wordlink.utilities.ensureIdElemments
 import com.mongodb.client.MongoCollection
 import io.ktor.locations.Location
+import io.ktor.locations.get
 import io.ktor.locations.post
 import io.ktor.request.receive
+import io.ktor.response.respond
 import io.ktor.routing.Route
+import io.ktor.routing.get
 import org.litote.kmongo.eq
 import org.litote.kmongo.getCollection
 import org.litote.kmongo.setTo
@@ -95,9 +99,21 @@ object Words {
 @Location("/word")
 class WordRoute {
 
+    @Location("/d/:id")
+    data class Get(val id: String)
+
     @Location("/import")
     class Import {
         data class Payload(val categoryId: String = "", val csvFileBody: MutableList<String> = mutableListOf())
+    }
+
+    @Location("/update")
+    class Update {
+        data class Payload(
+            val id: String = "",
+            val name: String = "",
+            val means: String = ""
+        )
     }
 
 }
@@ -110,6 +126,28 @@ fun Route.word() {
         val category = Categories.categories().find { category -> category.id == payload.categoryId } ?: throw BadRequestException("INVALID CATEGORY_ID")
 
         val word = readWordCSV(payload.csvFileBody, category)
+
+    }
+
+    get<WordRoute.Get> { query ->
+        context.request.tokenAuthentication()
+        val target = Words.words().find { word ->  query.id == word.id} ?: throw BadRequestException("Not found '${query.id}' as word.")
+
+        context.respond(ResponseInfo(data = target))
+    }
+
+    post<WordRoute.Update> {
+        val payload = context.receive(WordRoute.Update.Payload::class)
+        val target = Words.words().find { word ->  payload.id == word.id} ?: throw BadRequestException("Not found '${payload.id}' as word.")
+
+        target.apply {
+            name = payload.name
+            mean = payload.means
+        }
+
+        Words.updateWord(word = target)
+
+        context.respond(ResponseInfo(message = "has been succeed."))
 
     }
 
