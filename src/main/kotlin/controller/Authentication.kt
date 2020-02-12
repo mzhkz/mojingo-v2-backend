@@ -26,6 +26,9 @@ class Authentication {
         data class Payload(val base64Email: String = "", val base64Password: String = "")
     }
 
+    @Location("session")
+    class Session
+
     @Location("logout")
     class Logout
 }
@@ -43,6 +46,10 @@ fun Route.authentication() {
     }
 
     post<Authentication.Logout> {
+
+    }
+
+    post<Authentication.Session> {
 
     }
 }

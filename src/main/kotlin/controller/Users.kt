@@ -1,11 +1,17 @@
 package com.aopro.wordlink.controller
 
+import com.aopro.wordlink.ResponseInfo
 import com.aopro.wordlink.database.DatabaseHandler
 import com.aopro.wordlink.database.model.User
 import com.aopro.wordlink.utilities.DefaultZone
 import com.mongodb.client.MongoCollection
 import io.ktor.locations.Location
+import io.ktor.locations.get
+import io.ktor.locations.post
+import io.ktor.request.receive
+import io.ktor.response.respond
 import io.ktor.routing.Route
+import io.ktor.util.generateNonce
 import org.apache.commons.codec.digest.DigestUtils
 import org.litote.kmongo.eq
 import org.litote.kmongo.getCollection
@@ -78,11 +84,50 @@ object Users {
 @Location("/user")
 class UserRoute {
 
+    @Location("/enroll")
+    class Enroll {
+        data class Payload(
+            val username: String = "",
+            val accessLevel: String = "",
+            val firstName: String = "",
+            val lastName: String = ""
+        )
+    }
+
+    @Location("/list")
+    class List
 }
 
 fun Route.user() {
 
+    post <UserRoute.Enroll>{
+        val authUser = context.request.tokenAuthentication(2)
+        val payload = context.receive(UserRoute.Enroll.Payload::class)
+
+        val user = User(
+           id = UUID.randomUUID().toString().replace("-", ""),
+            username = payload.username,
+            firstName = payload.firstName,
+            lastName = payload.lastName,
+            encryptedPassword = encryptPassword("nonpass"),
+            accessLevel = -1,
+            createdAt = Date.from(LocalDateTime.now().atZone(DefaultZone).toInstant()),
+            updatedAt = Date.from(LocalDateTime.now().atZone(DefaultZone).toInstant())
+        )
+
+        Users.insertUser(user) //DBに登録
+
+        context.respond(ResponseInfo(data = user))
+    }
+
+
+    get<UserRoute.List >{
+        val authUser = context.request.tokenAuthentication(2)
+        context.respond(ResponseInfo(data = Users.users()))
+    }
 }
 
 /** ハッシュ化したパスワードが一致するかどうか*/
-fun isSamePassword(original: String, encrypted: String) = DigestUtils.sha256Hex(original) == encrypted
+fun isSamePassword(original: String, encrypted: String) = encryptPassword(original) == encrypted
+
+fun encryptPassword(original: String) =  DigestUtils.sha256Hex(original)

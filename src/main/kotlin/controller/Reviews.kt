@@ -113,7 +113,7 @@ object Markers {
     }
 
     /** UUIDで運用してみる。 */
-    fun generateSecureId(): String {
+    fun generateNonce(): String {
         return UUID.randomUUID().toString().replace('-', '.')
     }
 
@@ -127,18 +127,16 @@ class ReviewRoute {
     data class View(val target: String) {
 
         /** CSRF防止の為、回答専用のセッションを設ける */
-        @Location("/let")
-        class Let {
+        @Location("/let/:id")
+        data class Let(val id: String = "")
 
-            /** 回答を記録する。レビューセッションを含めなければいけない */
-            @Location("/mark")
-            class Mark {
-
-                data class Payload(
-                    val result: Int,
-                    val session: String
-                )
-            }
+        /** 回答を記録する。レビューセッションを含めなければいけない */
+        @Location("/let/:id/mark")
+        data class Mark(val id: String = "") {
+            data class Payload(
+                val result: Int,
+                val session: String
+            )
         }
     }
 
@@ -165,7 +163,7 @@ fun Route.reviews() {
     }
 
 
-    post<ReviewRoute.View.Let.Mark> {
+    post<ReviewRoute.View.Mark> {
 
 
     }

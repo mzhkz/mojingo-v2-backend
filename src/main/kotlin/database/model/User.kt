@@ -24,7 +24,7 @@ class User(@Expose val id: String,
                 lastName = "exist",
                 createdAt = Date(0L),
                 updatedAt = Date(0L),
-                accessLevel = 0,
+                accessLevel = -1,
                 encryptedPassword = ""
             )
     }
