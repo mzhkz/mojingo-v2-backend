@@ -80,6 +80,7 @@ object Words {
                 updated_at = word.updatedAt.time
             ))
         }
+        words.addAll(words)
     }
 
     /** データを更新する */

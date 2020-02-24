@@ -7,12 +7,16 @@ import com.aopro.wordlink.database.DatabaseHandler
 import com.aopro.wordlink.database.model.*
 import com.aopro.wordlink.utilities.DefaultZone
 import com.aopro.wordlink.utilities.ensureIdElemments
+import com.aopro.wordlink.utilities.generateRandomSHA512
+import com.google.gson.annotations.Expose
 import com.mongodb.client.MongoCollection
 import io.ktor.locations.Location
 import io.ktor.locations.get
 import io.ktor.locations.post
+import io.ktor.request.receive
 import io.ktor.response.respond
 import io.ktor.routing.Route
+import io.ktor.routing.post
 import org.litote.kmongo.eq
 import org.litote.kmongo.getCollection
 import org.litote.kmongo.setTo
@@ -31,17 +35,19 @@ object Reviews {
             .databaseSession
             .getCollection<Review.Model>("reviews")
 
-        reviews.addAll(session.find().map{ model ->
+        reviews.addAll(session.find().map { model ->
             Review(
                 id = model._id,
                 name = model.name,
                 description = model.description,
                 owner = Users.users().find { usr -> usr.id == model._id } ?: User.notExistObject(),
                 entries = model.entries
-                    .map { ent -> Words.words().find { word ->  word.id == ent} ?: Word.notExistObject() }
+                    .map { ent -> Words.words().find { word -> word.id == ent } ?: Word.notExistObject() }
                     .toMutableList(),
                 answers = model.answers
-                    .map { ent -> Answers.answers().find { answer ->  answer.word.id == ent} ?: Answer.notExistObject() }
+                    .map { ent ->
+                        Answers.answers().find { answer -> answer.word.id == ent } ?: Answer.notExistObject()
+                    }
                     .toMutableList(),
                 finished = model.finished,
                 createdAt = Date(model.createdAt * 1000),
@@ -75,6 +81,7 @@ object Reviews {
             createdAt = review.createdAt.time
 
         ))
+        reviews.add(review)
     }
 
     /** データベースを更新 */
@@ -92,52 +99,53 @@ object Reviews {
                         LocalDateTime
                             .now()
                             .atZone(DefaultZone)
-                            .toInstant()).time)
+                            .toInstant()
+                    ).time)
         }
     }
 }
 
 object Markers {
-
-    private val markers: MutableList<Marker> = mutableListOf()
-
-    fun markers() = markers.toMutableList()
-
-    fun initialize() {
-
-    }
-
-    /** マーカーを登録する。*/
-    fun registerMarker(marker: Marker) {
-        markers.add(marker)
-    }
-
-    /** UUIDで運用してみる。 */
-    fun generateNonce(): String {
-        return UUID.randomUUID().toString().replace('-', '.')
-    }
-
+    val markers = mutableListOf<Marker>()
 }
-
 
 @Location("/review")
 class ReviewRoute {
+
+    @Location("/create")
+    class Create {
+        data class Payload(
+            val category: String = "",
+            val from: Int = 0,
+            val end: Int = 0,
+            val shuffled: Boolean = false
+        )
+    }
 
     @Location("/:target")
     data class View(val target: String) {
 
         /** CSRF防止の為、回答専用のセッションを設ける */
-        @Location("/let/:id")
-        data class Let(val id: String = "")
+        @Location("/let/")
+        class Let {
 
-        /** 回答を記録する。レビューセッションを含めなければいけない */
-        @Location("/let/:id/mark")
-        data class Mark(val id: String = "") {
-            data class Payload(
-                val result: Int,
-                val session: String
+            data class Question(
+                @Expose val name: String = "",
+                @Expose val mean: String = "",
+                @Expose val id: String = "",
+                @Expose val representCorrect: String = "",
+                @Expose val representIncorrect: String = ""
             )
+
+            @Location("/mark/:id")
+            data class Mark(val id: String = "") {
+                data class Payload(
+                    val result: String = "",
+                    val target: String = ""
+                )
+            }
         }
+
     }
 
 
@@ -145,10 +153,38 @@ class ReviewRoute {
 
 fun Route.reviews() {
 
-    /** 指定されたユーザーの回答結果を取得する。ただし、他のユーザーのデータを取得する場合は、アクセスレベル２以上が必要。*/
-    get <ReviewRoute.View>{ query ->
-        val targetUser = Users.users().find { user -> query.target == user.id } ?: throw BadRequestException("指定されたユーザーが見つかりません")
+    post<ReviewRoute.Create> {
         val authUser = context.request.tokenAuthentication()
+        val payload = context.receive(ReviewRoute.Create.Payload::class)
+        val target = Categories.categories().find { category -> category.id == payload.category } ?: throw BadRequestException("指定されたカテゴリーが見つかりせん")
+        val entries = Words.words()
+            .filter { word -> word.category.id == target.id }
+            .sortedBy { word -> word.number }
+            .subList(payload.from - 1, payload.end)
+
+        val review = Review(
+            id = Reviews.generateNoDuplicationId(),
+            name = "Test",
+            description = "",
+            owner = authUser,
+            entries = entries.toMutableList(),
+            answers = mutableListOf(),
+            finished = false,
+            createdAt = Date.from(LocalDateTime.now().atZone(DefaultZone).toInstant()),
+            updatedAt = Date.from(LocalDateTime.now().atZone(DefaultZone).toInstant())
+        )
+
+        Reviews.insertReview(review) //DBに追加
+        context.respond(ResponseInfo(
+            data = review
+        ))
+    }
+
+    /** 指定されたユーザーの回答結果を取得する。ただし、他のユーザーのデータを取得する場合は、アクセスレベル２以上が必要。*/
+    get<ReviewRoute.View> { query ->
+        val authUser = context.request.tokenAuthentication()
+        val targetUser =
+            Users.users().find { user -> query.target == user.id } ?: throw BadRequestException("指定されたユーザーが見つかりません")
 
         if (targetUser.id != authUser.id && authUser.accessLevel < 2) throw AuthorizationException("権限が足りません")
 
@@ -159,13 +195,87 @@ fun Route.reviews() {
     }
 
     post<ReviewRoute.View.Let> {
+        val authUser = context.request.tokenAuthentication()
+        val targetId = context.parameters["target"]
+        val target = Reviews.reviews().find { review -> review.id == targetId }
+            ?: throw BadRequestException("Not correct review_id")
 
+        val marker = Marker(
+            id = generateRandomSHA512,
+            correctsCheck = generateRandomSHA512,
+            incorrectCheck = generateRandomSHA512,
+            reflectReview = target,
+            createdAt = Date.from(LocalDateTime.now().atZone(DefaultZone).toInstant()),
+            updatedAt = Date.from(LocalDateTime.now().atZone(DefaultZone).toInstant())
+        )
+        Markers.markers.add(marker)
+
+        val startIndex = target.answers.size
+        val next = target.entries.get(startIndex)
+
+        context.respond(
+            ResponseInfo(
+                data = ReviewRoute.View.Let.Question(
+                    id = next.id,
+                    name = next.id,
+                    mean = next.mean,
+                    representCorrect = marker.correctsCheck,
+                    representIncorrect = marker.incorrectCheck
+                )
+            )
+        )
     }
 
 
-    post<ReviewRoute.View.Mark> {
+    post<ReviewRoute.View.Let.Mark> {
+        val authUser = context.request.tokenAuthentication()
+        val payload = context.receive(ReviewRoute.View.Let.Mark.Payload::class)
+        val targetId = context.parameters["target"]
+        val id = context.parameters["target"]
+        val target = Reviews.reviews().find { review -> review.id == targetId }
+            ?: throw BadRequestException("Not correct review_id")
+        val marker = Markers.markers.find { marker -> marker.id == id }
+            ?: throw BadRequestException("Not correct marker_id")
 
+        if (marker.reflectReview.id != target.id) throw BadRequestException("Not correct marker")
+        val isCorrect = if (payload.result == marker.correctsCheck) true else false
 
+        val targetWord = Words.words().find { word -> word.id == payload.target } ?: throw BadRequestException("Not correct word_target")
+        val answer = authUser.getAnswer(targetWord)
+        target.answers.add(answer.apply {
+            histories.add(
+                Answer.History(
+                    impactReview = target,
+                    result = if (isCorrect) 1 else 0,
+                    postAt = Date.from(LocalDateTime.now().atZone(DefaultZone).toInstant())
+                )
+            )
+        })
+
+        Reviews.updateReview(target)
+        Answers.updateAnswer(answer)
+
+        //次の問題を出題
+        if (target.answers.size < target.entries.size) {
+            val startIndex = target.answers.size
+            val next = target.entries.get(startIndex)
+
+            context.respond(
+                ResponseInfo(
+                    data = ReviewRoute.View.Let.Question(
+                        id = next.id,
+                        name = next.id,
+                        mean = next.mean
+                    )
+                )
+            )
+
+        } else {
+            context.respond(
+                ResponseInfo(
+                   data = "finished"
+                )
+            )
+        }
     }
-
 }

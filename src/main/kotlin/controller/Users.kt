@@ -1,5 +1,6 @@
 package com.aopro.wordlink.controller
 
+import com.aopro.wordlink.BadRequestException
 import com.aopro.wordlink.ResponseInfo
 import com.aopro.wordlink.database.DatabaseHandler
 import com.aopro.wordlink.database.model.User
@@ -11,7 +12,6 @@ import io.ktor.locations.post
 import io.ktor.request.receive
 import io.ktor.response.respond
 import io.ktor.routing.Route
-import io.ktor.util.generateNonce
 import org.apache.commons.codec.digest.DigestUtils
 import org.litote.kmongo.eq
 import org.litote.kmongo.getCollection
@@ -96,6 +96,27 @@ class UserRoute {
 
     @Location("/list")
     class List
+
+    @Location("/profile/:id")
+    data class Profile(val id: String) {
+
+        @Location("/update")
+        class Update {
+
+            data class Payload(
+                val firstName: String = "",
+                val lastName: String = "",
+                val username: String = ""
+            )
+        }
+
+        @Location("/qualify")
+        class Qualify {
+            data class Payload(
+                val applyLevel: Int = 0
+            )
+        }
+    }
 }
 
 fun Route.user() {
@@ -118,6 +139,40 @@ fun Route.user() {
         Users.insertUser(user) //DBに登録
 
         context.respond(ResponseInfo(data = user))
+    }
+
+    post<UserRoute.Profile.Update> {
+        val authUser = context.request.tokenAuthentication(2)
+        val payload = context.receive(UserRoute.Profile.Update.Payload::class)
+
+        val targetId = context.parameters["id"]
+        val target = Users.users().find { user -> user.id == targetId } ?: throw BadRequestException("ユーザが見つかりません")
+
+        target.apply {
+            username = payload.username
+            firstName = payload.firstName
+            lastName = payload.lastName
+            updatedAt = Date.from(LocalDateTime.now().atZone(DefaultZone).toInstant())
+        }
+
+        Users.updateUser(target)
+        context.respond(ResponseInfo(data = target, message = "successful"))
+    }
+
+    post<UserRoute.Profile.Qualify> {
+        val authUser = context.request.tokenAuthentication(2)
+        val payload = context.receive(UserRoute.Profile.Qualify.Payload::class)
+
+        val targetId = context.parameters["id"]
+        val target = Users.users().find { user -> user.id == targetId } ?: throw BadRequestException("ユーザが見つかりません")
+
+        target.apply {
+            accessLevel = payload.applyLevel
+            updatedAt = Date.from(LocalDateTime.now().atZone(DefaultZone).toInstant())
+        }
+
+        Users.updateUser(target)
+        context.respond(ResponseInfo(data = target, message = "successful"))
     }
 
 

@@ -76,6 +76,7 @@ object Answers {
                 )
             } as MutableList<Answer.History.Model>
         ))
+        answers.add(answer)
     }
 
     /** データベースの回答を更新*/
@@ -100,7 +101,24 @@ object Answers {
                            .toInstant()).time)
        }
     }
+}
 
+fun User.getAnswer(word: Word): Answer {
+    val already = Answers.answers().find { answer -> answer.user.id == this.id && answer.word.id == word.id }
+    if (already != null) {
+        return already
+    } else {
+        val newInstance = Answer(
+            id = Answers.generateNoDuplicationId(),
+            user = this,
+            word = word,
+            createdAt = Date.from(LocalDateTime.now().atZone(DefaultZone).toInstant()),
+            updatedAt = Date.from(LocalDateTime.now().atZone(DefaultZone).toInstant()),
+            histories = mutableListOf()
+        )
+        Answers.insertAnswer(newInstance)
+        return newInstance
+    }
 }
 
 

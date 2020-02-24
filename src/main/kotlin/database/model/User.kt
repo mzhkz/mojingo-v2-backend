@@ -6,13 +6,13 @@ import org.apache.commons.codec.digest.DigestUtils
 import java.util.*
 
 class User(@Expose val id: String,
-           @Expose val username: String,
-           val encryptedPassword: String,
-           @Expose val firstName: String,
-           @Expose val lastName: String,
-           @Expose val accessLevel: Int = 0,
+           @Expose var username: String,
+           var encryptedPassword: String,
+           @Expose var firstName: String,
+           @Expose var lastName: String,
+           @Expose var accessLevel: Int = 0,
            @Expose val createdAt: Date,
-           @Expose val updatedAt: Date) {
+           @Expose var updatedAt: Date) {
 
     companion object {
         @JvmStatic

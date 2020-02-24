@@ -1,5 +1,6 @@
 package com.aopro.wordlink.utilities
 
+import org.apache.commons.codec.digest.DigestUtils
 import java.net.URI
 import java.net.URLEncoder
 import java.nio.charset.Charset
@@ -57,3 +58,9 @@ fun randomBytes(): ByteArray {
     Random().nextBytes(random) //CentOS
     return random
 }
+
+/** SHA-512ランダム生成*/
+val generateRandomSHA512: String
+    get() = DigestUtils.sha512Hex(randomBytes())
+
+

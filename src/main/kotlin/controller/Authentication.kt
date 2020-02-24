@@ -3,6 +3,7 @@ package com.aopro.wordlink.controller
 import com.aopro.wordlink.ApplicationConfig
 import com.aopro.wordlink.AuthorizationException
 import com.aopro.wordlink.BadRequestException
+import com.aopro.wordlink.ResponseInfo
 import com.aopro.wordlink.database.model.User
 import com.aopro.wordlink.utilities.DefaultZone
 import com.aopro.wordlink.utilities.fromBase64
@@ -13,6 +14,7 @@ import io.ktor.locations.post
 import io.ktor.request.ApplicationRequest
 import io.ktor.request.header
 import io.ktor.request.receive
+import io.ktor.response.respond
 import io.ktor.routing.Route
 import java.time.LocalDateTime
 import java.util.*
@@ -27,7 +29,8 @@ class Authentication {
     }
 
     @Location("session")
-    class Session
+    class Session {
+    }
 
     @Location("logout")
     class Logout
@@ -41,7 +44,7 @@ fun Route.authentication() {
         val target = Users.users().find { usr -> usr.id == requestEmail } ?: throw BadRequestException("ユーザーネーム、またはパスワードが間違っています。")
 
         if (isSamePassword(payload.base64Password.fromBase64(), target.encryptedPassword)) {
-
+            context.respond(ResponseInfo(data = target, message = generateAuthenticationToken(target)))
         } else throw BadRequestException("ユーザーネーム、またはパスワードが間違っています。")
     }
 

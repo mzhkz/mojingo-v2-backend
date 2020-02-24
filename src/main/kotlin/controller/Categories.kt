@@ -66,6 +66,7 @@ object Categories {
             updated_at = category.createdAt.time,
             private = category.private
         ))
+        categories.add(category)
     }
 
 
@@ -127,7 +128,7 @@ fun Route.category() {
 
 
         val entries = readWordCSV(
-            line = payload.csvBody.split(";").toMutableList(),
+            line = payload.csvBody.split(";---;").toMutableList(),
             category = instance
         )
 
