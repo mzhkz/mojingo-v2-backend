@@ -10,6 +10,7 @@ import com.aopro.wordlink.utilities.fromBase64
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import io.ktor.locations.Location
+import io.ktor.locations.get
 import io.ktor.locations.post
 import io.ktor.request.ApplicationRequest
 import io.ktor.request.header
@@ -40,16 +41,16 @@ class Authentication {
 fun Route.authentication() {
     post<Authentication.Credential> {
         val payload = context.receive(Authentication.Credential.Payload::class)
-        val requestEmail = payload.base64Email.fromBase64()
+        val requestEmail = payload.base64Email
         val target = Users.users().find { usr -> usr.id == requestEmail } ?: throw BadRequestException("ユーザーネーム、またはパスワードが間違っています。")
 
-        if (isSamePassword(payload.base64Password.fromBase64(), target.encryptedPassword)) {
+        if (isSamePassword(payload.base64Password, target.encryptedPassword)) {
             context.respond(ResponseInfo(data = target, message = generateAuthenticationToken(target)))
         } else throw BadRequestException("ユーザーネーム、またはパスワードが間違っています。")
     }
 
-    post<Authentication.Logout> {
-
+    get<Authentication.Logout> {
+        context.respond("tet")
     }
 
     post<Authentication.Session> {

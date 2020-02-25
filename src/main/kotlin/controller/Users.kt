@@ -5,6 +5,7 @@ import com.aopro.wordlink.ResponseInfo
 import com.aopro.wordlink.database.DatabaseHandler
 import com.aopro.wordlink.database.model.User
 import com.aopro.wordlink.utilities.DefaultZone
+import com.aopro.wordlink.utilities.generateRandomSHA512
 import com.mongodb.client.MongoCollection
 import io.ktor.locations.Location
 import io.ktor.locations.get
@@ -44,6 +45,18 @@ object Users {
                 updatedAt = Date(model.updated_at * 1000)
             )
         })
+
+        //Rootアカウント
+        users.add(User(
+            id = generateRandomSHA512,
+            username = "root",
+            firstName = "System",
+            lastName = "Yoyaku",
+            createdAt = Date.from(LocalDateTime.now().atZone(DefaultZone).toInstant()),
+            updatedAt = Date.from(LocalDateTime.now().atZone(DefaultZone).toInstant()),
+            accessLevel = 2,
+            encryptedPassword = encryptPassword("wordlink1234")
+        ))
     }
 
     /** データベースに記録ユーザーを登録する*/
@@ -98,7 +111,7 @@ class UserRoute {
     class List
 
     @Location("/profile/:id")
-    data class Profile(val id: String) {
+    class Profile {
 
         @Location("/update")
         class Update {

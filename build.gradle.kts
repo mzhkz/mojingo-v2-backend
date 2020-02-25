@@ -18,7 +18,7 @@ repositories {
 
 dependencies {
     val kotlinVersion: String by extra
-    val ktorVersion = "1.2.6"
+    val ktorVersion = "1.0.1"
     val MongoVersion = "3.11.2"
 
     implementation(kotlin("stdlib-jdk8"))

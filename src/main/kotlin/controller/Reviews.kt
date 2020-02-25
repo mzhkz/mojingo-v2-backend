@@ -123,7 +123,7 @@ class ReviewRoute {
     }
 
     @Location("/:target")
-    data class View(val target: String) {
+    class View {
 
         /** CSRF防止の為、回答専用のセッションを設ける */
         @Location("/let/")
@@ -183,8 +183,9 @@ fun Route.reviews() {
     /** 指定されたユーザーの回答結果を取得する。ただし、他のユーザーのデータを取得する場合は、アクセスレベル２以上が必要。*/
     get<ReviewRoute.View> { query ->
         val authUser = context.request.tokenAuthentication()
+        val targetId: String = context.parameters["target"]!!
         val targetUser =
-            Users.users().find { user -> query.target == user.id } ?: throw BadRequestException("指定されたユーザーが見つかりません")
+            Users.users().find { user -> targetId == user.id } ?: throw BadRequestException("指定されたユーザーが見つかりません")
 
         if (targetUser.id != authUser.id && authUser.accessLevel < 2) throw AuthorizationException("権限が足りません")
 
