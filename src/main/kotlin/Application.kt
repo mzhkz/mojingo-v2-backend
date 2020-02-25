@@ -157,6 +157,3 @@ data class ResponseInfo(
 class AuthorizationException(error: String = "") : RuntimeException(error)
 class NotFoundException(error: String = "") : RuntimeException(error)
 class BadRequestException(error: String = "") : RuntimeException(error)
-
-    }
-}
