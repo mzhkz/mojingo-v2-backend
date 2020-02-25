@@ -55,7 +55,7 @@ object Users {
             createdAt = Date.from(LocalDateTime.now().atZone(DefaultZone).toInstant()),
             updatedAt = Date.from(LocalDateTime.now().atZone(DefaultZone).toInstant()),
             accessLevel = 2,
-            encryptedPassword = encryptPassword("wordlink1234")
+            encryptedPassword = encryptPassword("w1")
         ))
     }
 

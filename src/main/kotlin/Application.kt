@@ -2,17 +2,25 @@ package com.aopro.wordlink
 
 import com.aopro.wordlink.controller.*
 import com.aopro.wordlink.database.DatabaseHandler
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
+import com.google.gson.annotations.Expose
 import io.ktor.application.Application
+import io.ktor.application.ApplicationCall
+import io.ktor.application.call
 import io.ktor.application.install
 import io.ktor.features.*
 import io.ktor.gson.gson
 import io.ktor.html.respondHtml
+import io.ktor.http.ContentType
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.locations.Locations
 import io.ktor.request.header
+import io.ktor.request.receiveText
 import io.ktor.response.header
 import io.ktor.response.respond
+import io.ktor.response.respondText
 import io.ktor.routing.Routing
 import io.ktor.routing.get
 import io.ktor.routing.routing
@@ -35,6 +43,8 @@ fun Application.module(testing: Boolean = false) {
     Answers.initialize() //回答データ読み込み
 
     install(Locations)
+
+    install(Compression)
 
     install(ContentNegotiation) {
         gson {
@@ -85,7 +95,8 @@ fun Application.module(testing: Boolean = false) {
     routing {
 
         get {
-
+            call.respond(ResponseInfo(message = "testtest"))
+//            call.respond("aaaaa")
         }
 
         authentication()
@@ -115,7 +126,7 @@ fun Application.module(testing: Boolean = false) {
 
                 if (context.request.header("X-Requested-With").equals("XMLHttpRequest")) {
                     context.response.header("X-Server-Error-Hash", hash) //ハッシュを含む
-                    context.respond(ResponseInfo(result = 500, message = "サーバー側でエラーが発生しました"))
+                    context.respond(ResponseInfo(result = 500, message = "サーバー側でエラーが発生しました", data = hash))
                 } else {
                     context.respondHtml(block = {
                         head {
@@ -129,7 +140,7 @@ fun Application.module(testing: Boolean = false) {
                         }
                     }, status = HttpStatusCode.InternalServerError)
                 }
-
+                cause.printStackTrace()
 
             }
         }
@@ -137,9 +148,15 @@ fun Application.module(testing: Boolean = false) {
 }
 
 
-data class ResponseInfo(val data: Any? = null, val result: Int = HttpStatusCode.OK.value, val message: String = "")
+data class ResponseInfo(
+    @Expose val data: Any? = null,
+    @Expose val result: Int = HttpStatusCode.OK.value,
+    @Expose val message: String = "")
 
 
 class AuthorizationException(error: String = "") : RuntimeException(error)
 class NotFoundException(error: String = "") : RuntimeException(error)
 class BadRequestException(error: String = "") : RuntimeException(error)
+
+    }
+}
