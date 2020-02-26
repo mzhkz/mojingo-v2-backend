@@ -1,5 +1,6 @@
 package com.aopro.wordlink.controller
 
+import com.aopro.wordlink.AuthorizationException
 import com.aopro.wordlink.BadRequestException
 import com.aopro.wordlink.ResponseInfo
 import com.aopro.wordlink.database.DatabaseHandler
@@ -165,6 +166,22 @@ fun Route.user() {
         Users.insertUser(user) //DBに登録
 
         context.respond(ResponseInfo(data = user))
+    }
+
+    get<UserRoute.Profile> { query ->
+        val authUser = context.request.tokenAuthentication()
+
+        val targetId = context.parameters["id"]
+        val id =
+            if (targetId == "me" || targetId == authUser.id)
+                authUser.id
+            else {
+                if (authUser.accessLevel >= 2)
+                    targetId
+                else throw AuthorizationException("Your token doesn't access this content.")
+            }
+        val target = Users.users().find { user -> user.id == id } ?: throw BadRequestException("Not found '$targetId' as User.")
+        context.respond(ResponseInfo(data = target, message = "successful"))
     }
 
     post<UserRoute.Profile.Update> {
