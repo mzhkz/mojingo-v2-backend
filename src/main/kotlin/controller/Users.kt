@@ -6,6 +6,7 @@ import com.aopro.wordlink.database.DatabaseHandler
 import com.aopro.wordlink.database.model.User
 import com.aopro.wordlink.utilities.DefaultZone
 import com.aopro.wordlink.utilities.generateRandomSHA512
+import com.google.gson.annotations.Expose
 import com.mongodb.client.MongoCollection
 import io.ktor.locations.Location
 import io.ktor.locations.get
@@ -48,7 +49,7 @@ object Users {
 
         //Rootアカウント
         users.add(User(
-            id = generateRandomSHA512,
+            id = "roottest",
             username = "root",
             firstName = "System",
             lastName = "Yoyaku",
@@ -71,6 +72,7 @@ object Users {
             access_level = user.accessLevel,
             encrypted_password = user.encryptedPassword
         ))
+        users.add(user)
     }
 
     /** データベースのユーザーを更新する*/
@@ -82,6 +84,7 @@ object Users {
                 User.Model::encrypted_password setTo usr.encryptedPassword,
                 User.Model::first_name setTo usr.firstName,
                 User.Model::last_name setTo usr.lastName,
+                User.Model::access_level setTo usr.accessLevel,
                 User.Model::updated_at setTo Date
                     .from(
                         LocalDateTime
@@ -100,33 +103,43 @@ class UserRoute {
     @Location("/enroll")
     class Enroll {
         data class Payload(
-            val username: String = "",
-            val accessLevel: String = "",
-            val firstName: String = "",
-            val lastName: String = ""
+            @Expose val username: String = "",
+            @Expose val accessLevel: Int = 0,
+            @Expose val firstName: String = "",
+            @Expose val lastName: String = "",
+            @Expose val password: String = ""
         )
     }
 
     @Location("/list")
     class List
 
-    @Location("/profile/:id")
-    class Profile {
+
+    @Location("/profile/{id}")
+    data class Profile(val id: String = "") {
+
+        @Location("/reset-pass")
+        class ResetPassword {
+
+            data class Payload(
+                @Expose val password: String = ""
+            )
+        }
 
         @Location("/update")
         class Update {
 
             data class Payload(
-                val firstName: String = "",
-                val lastName: String = "",
-                val username: String = ""
+                @Expose val firstName: String = "",
+                @Expose val lastName: String = "",
+                @Expose val username: String = ""
             )
         }
 
         @Location("/qualify")
         class Qualify {
             data class Payload(
-                val applyLevel: Int = 0
+                @Expose val applyLevel: Int = 0
             )
         }
     }
@@ -143,8 +156,8 @@ fun Route.user() {
             username = payload.username,
             firstName = payload.firstName,
             lastName = payload.lastName,
-            encryptedPassword = encryptPassword("nonpass"),
-            accessLevel = -1,
+            encryptedPassword = encryptPassword(payload.password),
+            accessLevel = payload.accessLevel,
             createdAt = Date.from(LocalDateTime.now().atZone(DefaultZone).toInstant()),
             updatedAt = Date.from(LocalDateTime.now().atZone(DefaultZone).toInstant())
         )
@@ -181,6 +194,22 @@ fun Route.user() {
 
         target.apply {
             accessLevel = payload.applyLevel
+            updatedAt = Date.from(LocalDateTime.now().atZone(DefaultZone).toInstant())
+        }
+
+        Users.updateUser(target)
+        context.respond(ResponseInfo(data = target, message = "successful"))
+    }
+
+    post<UserRoute.Profile.ResetPassword> {
+        val authUser = context.request.tokenAuthentication(2)
+        val payload = context.receive(UserRoute.Profile.ResetPassword.Payload::class)
+
+        val targetId = context.parameters["id"]
+        val target = Users.users().find { user -> user.id == targetId } ?: throw BadRequestException("ユーザが見つかりません")
+
+        target.apply {
+            encryptedPassword = encryptPassword(payload.password);
             updatedAt = Date.from(LocalDateTime.now().atZone(DefaultZone).toInstant())
         }
 

@@ -74,18 +74,20 @@ fun generateAuthenticationToken(user: User): String {
 
 
 fun ApplicationRequest.tokenAuthentication(accessLevel: Int = 1): User {
-    val token = header("X-Token")
-        ?.substring("Bearer ".toCharArray().size)
+    val token = header("X-Access-Token")
         ?: throw AuthorizationException("Request has been miss.")
 
     val algorithm = Algorithm.HMAC256(ApplicationConfig.JWT_SECRET)
     val jwt = try { JWT.require(algorithm).build().verify(token) }
-    catch (e: Exception) { throw AuthorizationException("Token has been invalid.") }
+    catch (e: Exception) {
+        e.printStackTrace()
+        throw AuthorizationException("Token has been invalid.") }
 
     val id = jwt.getClaim(User.Model::_id.name).asString()
-    val level = jwt.getClaim(User.Model::access_level.name).asInt()
+    val user = Users.users().find { user -> user.id == id } ?: throw AuthorizationException("Token has been invalid")
 
-    if (level < accessLevel) throw AuthorizationException("Your token doesnt have access this content.")
 
-    return Users.users().find { user -> user.id == id } ?: throw AuthorizationException("Token has been invalid.")
+    if (user.accessLevel < accessLevel) throw AuthorizationException("Your token doesn't access this content.")
+
+    return user
 }
