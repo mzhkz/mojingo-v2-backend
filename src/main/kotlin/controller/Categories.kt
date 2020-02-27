@@ -6,13 +6,14 @@ import com.aopro.wordlink.database.model.Category
 import com.aopro.wordlink.database.model.readWordCSV
 import com.aopro.wordlink.utilities.DefaultZone
 import com.aopro.wordlink.utilities.ensureIdElemments
+import com.google.gson.annotations.Expose
 import com.mongodb.client.MongoCollection
 import io.ktor.locations.Location
+import io.ktor.locations.get
 import io.ktor.locations.post
 import io.ktor.request.receive
 import io.ktor.response.respond
 import io.ktor.routing.Route
-import io.ktor.routing.get
 import org.litote.kmongo.eq
 import org.litote.kmongo.getCollection
 import org.litote.kmongo.setTo
@@ -90,6 +91,11 @@ object Categories {
 @Location("categories")
 class CategoryRoute {
 
+    data class CategoryResponse(
+        @Expose val raw: Category? = null,
+        @Expose val wordSize: Int = 0
+    )
+
     class Create() {
         data class Payload(
             val name: String,
@@ -103,12 +109,16 @@ class CategoryRoute {
 
 fun Route.category() {
 
-    get {
+    get<CategoryRoute> {
         val user = context.request.tokenAuthentication()
         val categories = Categories.categories()
         val response = categories.mapNotNull { c1 ->
             categories.find { c2 -> c1.id == c2.id }
-        }
+        }.map { c3 -> CategoryRoute.CategoryResponse(
+            raw = c3,
+            wordSize = Words.words().filter { word -> word.category.id == c3.id }
+                .size
+        ) }
         context.respond(ResponseInfo(data = response))
     }
 

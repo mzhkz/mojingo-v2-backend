@@ -6,7 +6,7 @@ import com.aopro.wordlink.ResponseInfo
 import com.aopro.wordlink.database.DatabaseHandler
 import com.aopro.wordlink.database.model.User
 import com.aopro.wordlink.utilities.DefaultZone
-import com.aopro.wordlink.utilities.generateRandomSHA512
+import com.aopro.wordlink.utilities.splitAsPagination
 import com.google.gson.annotations.Expose
 import com.mongodb.client.MongoCollection
 import io.ktor.locations.Location
@@ -119,6 +119,11 @@ class UserRoute {
     @Location("/profile/{id}")
     data class Profile(val id: String = "") {
 
+        data class ProfileResponse(
+            @Expose val profile: User? = null,
+            @Expose val reviews: MutableList<ReviewRoute.View.ReviewResponse> = mutableListOf()
+        )
+
         @Location("/reset-pass")
         class ResetPassword {
 
@@ -180,8 +185,23 @@ fun Route.user() {
                     targetId
                 else throw AuthorizationException("Your token doesn't access this content.")
             }
-        val target = Users.users().find { user -> user.id == id } ?: throw BadRequestException("Not found '$targetId' as User.")
-        context.respond(ResponseInfo(data = target, message = "successful"))
+
+        val targetProfile = Users.users().find { user -> user.id == id } ?: throw BadRequestException("Not found '$targetId' as User.")
+        val targetReviews = Reviews.reviews()
+            .filter { review -> review.owner.id == targetProfile.id }.toMutableList()
+        context.respond(ResponseInfo(
+            data = UserRoute.Profile.ProfileResponse(
+                profile = targetProfile,
+                reviews = targetReviews.splitAsPagination(1, 5).map { review ->
+                    val impacts = Answers.answers().mapNotNull { answer -> answer.histories.find { history ->  history.impactReview.id == review.id}}
+                    ReviewRoute.View.ReviewResponse(
+                        review = review,
+                        correctSize = impacts.count { history -> history.result == 1 } ,
+                        incorrectSize = impacts.count { history -> history.result == 0 }
+                    )
+                }.toMutableList()
+            )
+            , message = "successful"))
     }
 
     post<UserRoute.Profile.Update> {

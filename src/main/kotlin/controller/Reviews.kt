@@ -16,7 +16,6 @@ import io.ktor.locations.post
 import io.ktor.request.receive
 import io.ktor.response.respond
 import io.ktor.routing.Route
-import io.ktor.routing.post
 import org.litote.kmongo.eq
 import org.litote.kmongo.getCollection
 import org.litote.kmongo.setTo
@@ -122,8 +121,14 @@ class ReviewRoute {
         )
     }
 
-    @Location("/:target")
-    class View {
+    @Location("{target}")
+    data class View(val target: String = "") {
+
+        data class ReviewResponse(
+            @Expose val review: Review? = null,
+            @Expose val correctSize: Int = 0,
+            @Expose val incorrectSize: Int = 0
+        )
 
         /** CSRF防止の為、回答専用のセッションを設ける */
         @Location("/let/")
@@ -137,7 +142,7 @@ class ReviewRoute {
                 @Expose val representIncorrect: String = ""
             )
 
-            @Location("/mark/:id")
+            @Location("/mark/{id}")
             data class Mark(val id: String = "") {
                 data class Payload(
                     val result: String = "",
@@ -184,13 +189,31 @@ fun Route.reviews() {
     get<ReviewRoute.View> { query ->
         val authUser = context.request.tokenAuthentication()
         val targetId: String = context.parameters["target"]!!
-        val targetUser =
-            Users.users().find { user -> targetId == user.id } ?: throw BadRequestException("指定されたユーザーが見つかりません")
+        val id =
+            if (targetId == "me" || targetId == authUser.id)
+                authUser.id
+            else {
+                if (authUser.accessLevel >= 2)
+                    targetId
+                else throw AuthorizationException("Your token doesn't access this content.")
+            }
+        val targetUser = Users.users().find { user -> user.id == id } ?: throw BadRequestException("Not found '$targetId' as User.")
 
         if (targetUser.id != authUser.id && authUser.accessLevel < 2) throw AuthorizationException("権限が足りません")
 
+        val target = Reviews.reviews()
+            .filter { review -> review.owner.id == targetUser.id }
+            .map { review ->
+                val impacts = Answers.answers().mapNotNull { answer -> answer.histories.find { history ->  history.impactReview.id == review.id}}
+                ReviewRoute.View.ReviewResponse(
+                    review = review,
+                    correctSize = impacts.count { history -> history.result == 1 } ,
+                    incorrectSize = impacts.count { history -> history.result == 0 }
+                )
+            }
+
         context.respond(ResponseInfo(
-            data = Reviews.reviews().filter { review -> review.owner.id == targetUser.id }
+            data = target
         ))
 
     }
