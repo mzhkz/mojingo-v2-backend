@@ -156,9 +156,12 @@ fun Route.category() {
         )
 
         Categories.insertCategory(instance)
-        Words.insertWord(entries)
+        entries.forEach { word -> Words.insertWord(word) }
 
         context.respond(ResponseInfo(message = "has been succeed"))
+
+        println(entries.size)
+        println(Words.words().size)
     }
 
     get<CategoryRoute.View> {
