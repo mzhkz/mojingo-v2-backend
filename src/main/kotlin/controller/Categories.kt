@@ -96,12 +96,13 @@ class CategoryRoute {
         @Expose val wordSize: Int = 0
     )
 
-    class Create() {
+    @Location("/create")
+    class Create {
         data class Payload(
-            val name: String,
-            val description: String,
-            val private: Boolean,
-            val csvBody: String
+            @Expose val name: String = "",
+            @Expose val description: String = "",
+            @Expose val private: Boolean = false,
+            @Expose val csvBody: MutableList<String> = mutableListOf()
         )
     }
 
@@ -138,7 +139,7 @@ fun Route.category() {
 
 
         val entries = readWordCSV(
-            line = payload.csvBody.split(";---;").toMutableList(),
+            line = payload.csvBody,
             category = instance
         )
 
