@@ -108,46 +108,48 @@ object Markers {
     val markers = mutableListOf<Marker>()
 }
 
-@Location("/review")
+@Location("/reviews")
 class ReviewRoute {
 
     @Location("/create")
     class Create {
         data class Payload(
-            val category: String = "",
-            val from: Int = 0,
-            val end: Int = 0,
-            val shuffled: Boolean = false
+            @Expose val category: String = "",
+            @Expose val from: Int = 0,
+            @Expose val end: Int = 0,
+            @Expose val shuffled: Boolean = false
         )
     }
 
     @Location("{target}")
-    data class View(val target: String = "") {
+    data class List(val target: String = "") {
 
         data class ReviewResponse(
             @Expose val review: Review? = null,
             @Expose val correctSize: Int = 0,
             @Expose val incorrectSize: Int = 0
         )
+        @Location("{id}")
+        data class View(val id: String = "") {
+            /** CSRF防止の為、回答専用のセッションを設ける */
+            @Location("/let/")
+            class Let {
 
-        /** CSRF防止の為、回答専用のセッションを設ける */
-        @Location("/let/")
-        class Let {
-
-            data class Question(
-                @Expose val name: String = "",
-                @Expose val mean: String = "",
-                @Expose val id: String = "",
-                @Expose val representCorrect: String = "",
-                @Expose val representIncorrect: String = ""
-            )
-
-            @Location("/mark/{id}")
-            data class Mark(val id: String = "") {
-                data class Payload(
-                    val result: String = "",
-                    val target: String = ""
+                data class Question(
+                    @Expose val name: String = "",
+                    @Expose val mean: String = "",
+                    @Expose val id: String = "",
+                    @Expose val representCorrect: String = "",
+                    @Expose val representIncorrect: String = ""
                 )
+
+                @Location("/mark/{marker}")
+                data class Mark(val marker: String = "") {
+                    data class Payload(
+                        val result: String = "",
+                        val target: String = ""
+                    )
+                }
             }
         }
 
@@ -186,7 +188,7 @@ fun Route.reviews() {
     }
 
     /** 指定されたユーザーの回答結果を取得する。ただし、他のユーザーのデータを取得する場合は、アクセスレベル２以上が必要。*/
-    get<ReviewRoute.View> { query ->
+    get<ReviewRoute.List> { query ->
         val authUser = context.request.tokenAuthentication()
         val targetId: String = context.parameters["target"]!!
         val id =
@@ -205,7 +207,7 @@ fun Route.reviews() {
             .filter { review -> review.owner.id == targetUser.id }
             .map { review ->
                 val impacts = Answers.answers().mapNotNull { answer -> answer.histories.find { history ->  history.impactReview.id == review.id}}
-                ReviewRoute.View.ReviewResponse(
+                ReviewRoute.List.ReviewResponse(
                     review = review,
                     correctSize = impacts.count { history -> history.result == 1 } ,
                     incorrectSize = impacts.count { history -> history.result == 0 }
@@ -218,10 +220,10 @@ fun Route.reviews() {
 
     }
 
-    post<ReviewRoute.View.Let> {
+    post<ReviewRoute.List.View.Let> {
         val authUser = context.request.tokenAuthentication()
-        val targetId = context.parameters["target"]
-        val target = Reviews.reviews().find { review -> review.id == targetId }
+        val reviewId = context.parameters["id"]
+        val target = Reviews.reviews().find { review -> review.id == reviewId }
             ?: throw BadRequestException("Not correct review_id")
 
         val marker = Marker(
@@ -239,7 +241,7 @@ fun Route.reviews() {
 
         context.respond(
             ResponseInfo(
-                data = ReviewRoute.View.Let.Question(
+                data = ReviewRoute.List.View.Let.Question(
                     id = next.id,
                     name = next.id,
                     mean = next.mean,
@@ -251,18 +253,20 @@ fun Route.reviews() {
     }
 
 
-    post<ReviewRoute.View.Let.Mark> {
+    post<ReviewRoute.List.View.Let.Mark> {
         val authUser = context.request.tokenAuthentication()
-        val payload = context.receive(ReviewRoute.View.Let.Mark.Payload::class)
-        val targetId = context.parameters["target"]
-        val id = context.parameters["target"]
-        val target = Reviews.reviews().find { review -> review.id == targetId }
+
+        val payload = context.receive(ReviewRoute.List.View.Let.Mark.Payload::class)
+        val reviewId = context.parameters["id"]
+        val markerId = context.parameters["marker"]
+
+        val target = Reviews.reviews().find { review -> review.id == reviewId }
             ?: throw BadRequestException("Not correct review_id")
-        val marker = Markers.markers.find { marker -> marker.id == id }
+        val marker = Markers.markers.find { marker -> marker.id == markerId }
             ?: throw BadRequestException("Not correct marker_id")
 
         if (marker.reflectReview.id != target.id) throw BadRequestException("Not correct marker")
-        val isCorrect = if (payload.result == marker.correctsCheck) true else false
+        val isCorrect = payload.result == marker.correctsCheck
 
         val targetWord = Words.words().find { word -> word.id == payload.target } ?: throw BadRequestException("Not correct word_target")
         val answer = authUser.getAnswer(targetWord)
@@ -281,15 +285,24 @@ fun Route.reviews() {
 
         //次の問題を出題
         if (target.answers.size < target.entries.size) {
+
+            //更新
+            marker.apply {
+                correctsCheck = generateRandomSHA512
+                incorrectCheck = generateRandomSHA512
+            }
+
             val startIndex = target.answers.size
             val next = target.entries.get(startIndex)
 
             context.respond(
                 ResponseInfo(
-                    data = ReviewRoute.View.Let.Question(
+                    data = ReviewRoute.List.View.Let.Question(
                         id = next.id,
                         name = next.id,
-                        mean = next.mean
+                        mean = next.mean,
+                        representCorrect = marker.correctsCheck,
+                        representIncorrect = marker.incorrectCheck
                     )
                 )
             )

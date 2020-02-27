@@ -121,7 +121,7 @@ class UserRoute {
 
         data class ProfileResponse(
             @Expose val profile: User? = null,
-            @Expose val reviews: MutableList<ReviewRoute.View.ReviewResponse> = mutableListOf()
+            @Expose val reviews: MutableList<ReviewRoute.List.ReviewResponse> = mutableListOf()
         )
 
         @Location("/reset-pass")
@@ -189,12 +189,15 @@ fun Route.user() {
         val targetProfile = Users.users().find { user -> user.id == id } ?: throw BadRequestException("Not found '$targetId' as User.")
         val targetReviews = Reviews.reviews()
             .filter { review -> review.owner.id == targetProfile.id }.toMutableList()
+
         context.respond(ResponseInfo(
             data = UserRoute.Profile.ProfileResponse(
                 profile = targetProfile,
                 reviews = targetReviews.splitAsPagination(1, 5).map { review ->
+
                     val impacts = Answers.answers().mapNotNull { answer -> answer.histories.find { history ->  history.impactReview.id == review.id}}
-                    ReviewRoute.View.ReviewResponse(
+
+                    ReviewRoute.List.ReviewResponse(
                         review = review,
                         correctSize = impacts.count { history -> history.result == 1 } ,
                         incorrectSize = impacts.count { history -> history.result == 0 }

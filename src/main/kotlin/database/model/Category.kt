@@ -41,20 +41,24 @@ class Category(@Expose val id: String,
 
 /** CSVファイルから単語を読み込む*/
 fun readWordCSV(line: MutableList<String>, category: Category): MutableList<Word> {
-    val regex = Regex("^(¥¥d),(¥¥w+),(¥¥w+)") //No,Name,Mean
-    var assignNumber = 1
+    val regex = Regex("^([\\d]+)(,)([\\w\\d\\s]+)(,)([\\p{InHiragana}\\p{InKatakana}\\p{InCJKUnifiedIdeographs}\\p{InBasicLatin}\\w\\d\\s]+)\$") //No,Name,Mean
+//    val regex = Regex("^(No)(,)(Name)(,)(Mean)\$") //No,Name,Mean
+    var assignNumber = 0
+
     return line.mapNotNull { str ->
-        val match = regex.matchEntire(str)
+        val match = regex.matchEntire(str) //タイトルかどうか
         if (match != null) {
-          Word(
-              id = Words.generateId(),
-              number = assignNumber++,
-              name = match.groupValues[1],
-              mean = match.groupValues[2],
-              category = category,
-              createdAt = Date.from(LocalDateTime.now().atZone(DefaultZone).toInstant()),
-              updatedAt = Date.from(LocalDateTime.now().atZone(DefaultZone).toInstant())
-          )
+            assignNumber+=1
+            println("${assignNumber}")
+            Word(
+                id = Words.generateId(),
+                number = assignNumber,
+                name = match.groupValues[3],
+                mean = match.groupValues[5],
+                category = category,
+                createdAt = Date.from(LocalDateTime.now().atZone(DefaultZone).toInstant()),
+                updatedAt = Date.from(LocalDateTime.now().atZone(DefaultZone).toInstant())
+            )
         } else null
     }.toMutableList()
 

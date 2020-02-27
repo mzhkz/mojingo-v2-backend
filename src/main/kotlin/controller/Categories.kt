@@ -1,11 +1,15 @@
 package com.aopro.wordlink.controller
 
+import com.aopro.wordlink.BadRequestException
 import com.aopro.wordlink.ResponseInfo
 import com.aopro.wordlink.database.DatabaseHandler
 import com.aopro.wordlink.database.model.Category
+import com.aopro.wordlink.database.model.Word
 import com.aopro.wordlink.database.model.readWordCSV
 import com.aopro.wordlink.utilities.DefaultZone
 import com.aopro.wordlink.utilities.ensureIdElemments
+import com.aopro.wordlink.utilities.maximumAsPagination
+import com.aopro.wordlink.utilities.splitAsPagination
 import com.google.gson.annotations.Expose
 import com.mongodb.client.MongoCollection
 import io.ktor.locations.Location
@@ -92,8 +96,9 @@ object Categories {
 class CategoryRoute {
 
     data class CategoryResponse(
-        @Expose val raw: Category? = null,
-        @Expose val wordSize: Int = 0
+        @Expose val category: Category? = null,
+        @Expose val wordCount: Int = 0,
+        @Expose val maxPageSize: Int = 0
     )
 
     @Location("/create")
@@ -106,6 +111,13 @@ class CategoryRoute {
         )
     }
 
+    @Location("/view/{id}")
+    data class View(val id: String = "") {
+
+        @Location("/words")
+        class Words
+    }
+
 }
 
 fun Route.category() {
@@ -115,11 +127,12 @@ fun Route.category() {
         val categories = Categories.categories()
         val response = categories.mapNotNull { c1 ->
             categories.find { c2 -> c1.id == c2.id }
-        }.map { c3 -> CategoryRoute.CategoryResponse(
-            raw = c3,
-            wordSize = Words.words().filter { word -> word.category.id == c3.id }
-                .size
-        ) }
+        }.map { c3 ->
+            CategoryRoute.CategoryResponse(
+                category = c3,
+                wordCount = Words.words().filter { word -> word.category.id == c3.id }.size
+            )
+        }
         context.respond(ResponseInfo(data = response))
     }
 
@@ -137,7 +150,6 @@ fun Route.category() {
             updatedAt = Date.from(LocalDateTime.now().atZone(DefaultZone).toInstant())
         )
 
-
         val entries = readWordCSV(
             line = payload.csvBody,
             category = instance
@@ -148,4 +160,36 @@ fun Route.category() {
 
         context.respond(ResponseInfo(message = "has been succeed"))
     }
+
+    get<CategoryRoute.View> {
+        context.request.tokenAuthentication()
+        val categoryId = context.parameters["id"]
+
+        val target = Categories.categories().find { category -> category.id == categoryId }
+            ?: throw BadRequestException("Not correct category_id")
+
+        val words = Words.words().filter { word -> word.category.id == target.id }
+
+        context.respond(ResponseInfo(data = CategoryRoute.CategoryResponse(
+            category = target,
+            maxPageSize = words.maximumAsPagination(25)
+        )))
+
+    }
+
+    get<CategoryRoute.View.Words> {
+        context.request.tokenAuthentication()
+        val categoryId = context.parameters["id"]
+        val page = context.request.queryParameters["page"]?.toInt() ?: 1
+        val keyword = context.request.queryParameters["keyword"] ?: ""
+
+        val target = Categories.categories().find { category -> category.id == categoryId }
+            ?:throw BadRequestException("Not correct category_id")
+
+        val words = Words.words().filter { word -> word.category.id == target.id && keyword.indexOf(keyword) != -1}
+
+        context.respond(ResponseInfo(data = words.splitAsPagination(page = page, index = 25).toMutableList()))
+
+    }
+
 }
