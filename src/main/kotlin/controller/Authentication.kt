@@ -41,6 +41,8 @@ class Authentication {
 fun Route.authentication() {
     post<Authentication.Credential> {
         val payload = context.receive(Authentication.Credential.Payload::class)
+        requireNotNullAndNotEmpty(payload.base64Email, payload.base64Password)
+
         val requestEmail = payload.base64Email
         println(requestEmail)
         val target = Users.users().find { usr -> usr.username == requestEmail } ?: throw BadRequestException("ユーザーネーム、またはパスワードが間違っています。")

@@ -5,6 +5,7 @@ import com.aopro.wordlink.BadRequestException
 import com.aopro.wordlink.ResponseInfo
 import com.aopro.wordlink.database.DatabaseHandler
 import com.aopro.wordlink.database.model.User
+import com.aopro.wordlink.requireNotNullAndNotEmpty
 import com.aopro.wordlink.utilities.DefaultZone
 import com.aopro.wordlink.utilities.splitAsPagination
 import com.google.gson.annotations.Expose
@@ -211,6 +212,8 @@ fun Route.user() {
         val authUser = context.request.tokenAuthentication(2)
         val payload = context.receive(UserRoute.Profile.Update.Payload::class)
 
+        requireNotNullAndNotEmpty(payload.firstName, payload.lastName, payload.username)
+
         val targetId = context.parameters["id"]
         val target = Users.users().find { user -> user.id == targetId } ?: throw BadRequestException("ユーザが見つかりません")
 
@@ -228,6 +231,7 @@ fun Route.user() {
     post<UserRoute.Profile.Qualify> {
         val authUser = context.request.tokenAuthentication(2)
         val payload = context.receive(UserRoute.Profile.Qualify.Payload::class)
+        requireNotNullAndNotEmpty(payload.applyLevel)
 
         val targetId = context.parameters["id"]
         val target = Users.users().find { user -> user.id == targetId } ?: throw BadRequestException("ユーザが見つかりません")
@@ -244,6 +248,7 @@ fun Route.user() {
     post<UserRoute.Profile.ResetPassword> {
         val authUser = context.request.tokenAuthentication(2)
         val payload = context.receive(UserRoute.Profile.ResetPassword.Payload::class)
+        requireNotNullAndNotEmpty(payload.password)
 
         val targetId = context.parameters["id"]
         val target = Users.users().find { user -> user.id == targetId } ?: throw BadRequestException("ユーザが見つかりません")

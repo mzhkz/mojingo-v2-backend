@@ -27,6 +27,7 @@ import io.ktor.routing.routing
 import kotlinx.html.*
 import org.apache.commons.codec.digest.DigestUtils
 import org.slf4j.event.Level
+import java.lang.IllegalArgumentException
 import java.text.DateFormat
 
 @Suppress("unused") // Referenced in application.conf
@@ -119,6 +120,10 @@ fun Application.module(testing: Boolean = false) {
                 context.respond(ResponseInfo(result = HttpStatusCode.BadRequest.value, message = cause.localizedMessage))
             }
 
+            exception<IllegalArgumentException> { cause ->
+                context.respond(ResponseInfo(result = HttpStatusCode.BadRequest.value, message = cause.localizedMessage))
+            }
+
             exception<Exception> { cause ->
                 val stack = cause.stackTrace
                 val message = "${cause.localizedMessage}#${stack[stack.size - 1]}"
@@ -157,3 +162,11 @@ data class ResponseInfo(
 class AuthorizationException(error: String = "") : RuntimeException(error)
 class NotFoundException(error: String = "") : RuntimeException(error)
 class BadRequestException(error: String = "") : RuntimeException(error)
+
+fun requireNotNullAndNotEmpty(vararg value: Any?) {
+    value.forEach {
+        if (it == null || it is String && value.isEmpty()) throw BadRequestException("入力不足の箇所があります。")
+    }
+}
+
+

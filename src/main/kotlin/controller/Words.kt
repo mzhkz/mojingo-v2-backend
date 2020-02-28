@@ -5,7 +5,6 @@ import com.aopro.wordlink.ResponseInfo
 import com.aopro.wordlink.database.DatabaseHandler
 import com.aopro.wordlink.database.model.Category
 import com.aopro.wordlink.database.model.Word
-import com.aopro.wordlink.database.model.readWordCSV
 import com.aopro.wordlink.utilities.DefaultZone
 import com.aopro.wordlink.utilities.ensureIdElemments
 import com.mongodb.client.MongoCollection
@@ -101,11 +100,6 @@ class WordRoute {
     @Location("/d/:id")
     data class Get(val id: String)
 
-    @Location("/import")
-    class Import {
-        data class Payload(val categoryId: String = "", val csvFileBody: MutableList<String> = mutableListOf())
-    }
-
     @Location("/update")
     class Update {
         data class Payload(
@@ -119,14 +113,6 @@ class WordRoute {
 
 fun Route.word() {
 
-    post<WordRoute.Import> {
-        context.request.tokenAuthentication(2) //管理者レベルからアクセス可能
-        val payload = context.receive<WordRoute.Import.Payload>()
-        val category = Categories.categories().find { category -> category.id == payload.categoryId } ?: throw BadRequestException("INVALID CATEGORY_ID")
-
-        val word = readWordCSV(payload.csvFileBody, category)
-
-    }
 
     get<WordRoute.Get> { query ->
         context.request.tokenAuthentication()

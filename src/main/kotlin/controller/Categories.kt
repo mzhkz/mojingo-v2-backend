@@ -5,7 +5,7 @@ import com.aopro.wordlink.ResponseInfo
 import com.aopro.wordlink.database.DatabaseHandler
 import com.aopro.wordlink.database.model.Category
 import com.aopro.wordlink.database.model.Word
-import com.aopro.wordlink.database.model.readWordCSV
+import com.aopro.wordlink.requireNotNullAndNotEmpty
 import com.aopro.wordlink.utilities.DefaultZone
 import com.aopro.wordlink.utilities.ensureIdElemments
 import com.aopro.wordlink.utilities.maximumAsPagination
@@ -140,6 +140,7 @@ fun Route.category() {
         context.request.tokenAuthentication(2) //管理者レベルからアクセス可能
 
         val payload = context.receive(CategoryRoute.Create.Payload::class)
+        requireNotNullAndNotEmpty(payload.name, payload.csvBody) //Null and Empty Check!
 
         val instance = Category(
             id = Categories.generateNoDuplicationId(),
@@ -150,7 +151,7 @@ fun Route.category() {
             updatedAt = Date.from(LocalDateTime.now().atZone(DefaultZone).toInstant())
         )
 
-        val entries = readWordCSV(
+        val entries = convertExcelFileToWords(
             line = payload.csvBody,
             category = instance
         )
@@ -167,6 +168,7 @@ fun Route.category() {
     get<CategoryRoute.View> {
         context.request.tokenAuthentication()
         val categoryId = context.parameters["id"]
+        requireNotNullAndNotEmpty(categoryId) //Null and Empty Check!
 
         val target = Categories.categories().find { category -> category.id == categoryId }
             ?: throw BadRequestException("Not correct category_id")
@@ -186,6 +188,8 @@ fun Route.category() {
         val page = context.request.queryParameters["page"]?.toInt() ?: 1
         val keyword = context.request.queryParameters["keyword"] ?: ""
 
+        requireNotNullAndNotEmpty(categoryId, page, keyword) //Null and Empty Check!
+
         val target = Categories.categories().find { category -> category.id == categoryId }
             ?:throw BadRequestException("Not correct category_id")
 
@@ -194,5 +198,29 @@ fun Route.category() {
         context.respond(ResponseInfo(data = words.splitAsPagination(page = page, index = 25).toMutableList()))
 
     }
+
+}
+
+/** CSVファイルから単語を読み込む*/
+fun convertExcelFileToWords(line: MutableList<String>, category: Category): MutableList<Word> {
+    val regex = Regex("^(No)(,)(Name)(,)(Mean)\$") //No,Name,Mean
+    var assignNumber = 0
+
+    return line.mapNotNull { str ->
+        val match = regex.matchEntire(str) //タイトルかどうか
+        if (match == null && str.indexOf(",") > 0) {
+            val contants = str.split(",")
+            assignNumber+=1
+            Word(
+                id = Words.generateId(),
+                number = assignNumber,
+                name = contants[1],
+                mean = contants[2],
+                category = category,
+                createdAt = Date.from(LocalDateTime.now().atZone(DefaultZone).toInstant()),
+                updatedAt = Date.from(LocalDateTime.now().atZone(DefaultZone).toInstant())
+            )
+        } else null
+    }.toMutableList()
 
 }

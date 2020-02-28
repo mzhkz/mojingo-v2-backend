@@ -5,6 +5,7 @@ import com.aopro.wordlink.BadRequestException
 import com.aopro.wordlink.ResponseInfo
 import com.aopro.wordlink.database.DatabaseHandler
 import com.aopro.wordlink.database.model.*
+import com.aopro.wordlink.requireNotNullAndNotEmpty
 import com.aopro.wordlink.utilities.DefaultZone
 import com.aopro.wordlink.utilities.ensureIdElemments
 import com.aopro.wordlink.utilities.generateRandomSHA512
@@ -115,9 +116,9 @@ class ReviewRoute {
     class Create {
         data class Payload(
             @Expose val category: String = "",
-            @Expose val from: Int = 0,
+            @Expose val start: Int = 0,
             @Expose val end: Int = 0,
-            @Expose val shuffled: Boolean = false
+            @Expose val shuffle: Boolean = false
         )
     }
 
@@ -163,15 +164,19 @@ fun Route.reviews() {
     post<ReviewRoute.Create> {
         val authUser = context.request.tokenAuthentication()
         val payload = context.receive(ReviewRoute.Create.Payload::class)
+        requireNotNullAndNotEmpty(payload.category, payload.start, payload.end, payload.shuffle)
+
+        println(payload.start)
+
         val target = Categories.categories().find { category -> category.id == payload.category } ?: throw BadRequestException("指定されたカテゴリーが見つかりせん")
         val entries = Words.words()
             .filter { word -> word.category.id == target.id }
             .sortedBy { word -> word.number }
-            .subList(payload.from - 1, payload.end)
+            .subList(payload.start - 1, payload.end)
 
         val review = Review(
             id = Reviews.generateNoDuplicationId(),
-            name = "Test",
+            name = "${target.name} ${payload.start} ${payload.end}",
             description = "",
             owner = authUser,
             entries = entries.toMutableList(),
@@ -190,16 +195,15 @@ fun Route.reviews() {
     /** 指定されたユーザーの回答結果を取得する。ただし、他のユーザーのデータを取得する場合は、アクセスレベル２以上が必要。*/
     get<ReviewRoute.List> { query ->
         val authUser = context.request.tokenAuthentication()
-        val targetId: String = context.parameters["target"]!!
-        val id =
-            if (targetId == "me" || targetId == authUser.id)
-                authUser.id
+        val userId: String = context.parameters["target"]!!
+        val targetUser =
+            if (userId == "me" || userId == authUser.id)
+                authUser
             else {
                 if (authUser.accessLevel >= 2)
-                    targetId
+                    Users.users().find { user -> user.id == userId } ?: throw BadRequestException("Not found '$userId' as User.")
                 else throw AuthorizationException("Your token doesn't access this content.")
             }
-        val targetUser = Users.users().find { user -> user.id == id } ?: throw BadRequestException("Not found '$targetId' as User.")
 
         if (targetUser.id != authUser.id && authUser.accessLevel < 2) throw AuthorizationException("権限が足りません")
 
@@ -259,6 +263,8 @@ fun Route.reviews() {
         val payload = context.receive(ReviewRoute.List.View.Let.Mark.Payload::class)
         val reviewId = context.parameters["id"]
         val markerId = context.parameters["marker"]
+
+        requireNotNullAndNotEmpty(payload.result, payload.target)
 
         val target = Reviews.reviews().find { review -> review.id == reviewId }
             ?: throw BadRequestException("Not correct review_id")
