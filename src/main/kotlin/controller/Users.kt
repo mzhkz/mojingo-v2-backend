@@ -8,6 +8,7 @@ import com.aopro.wordlink.database.model.User
 import com.aopro.wordlink.requireNotNullAndNotEmpty
 import com.aopro.wordlink.utilities.CurrentUnixTime
 import com.aopro.wordlink.utilities.DefaultZone
+import com.aopro.wordlink.utilities.currentUnixTimediff
 import com.aopro.wordlink.utilities.splitAsPagination
 import com.google.gson.annotations.Expose
 import com.mongodb.client.MongoCollection
@@ -197,7 +198,8 @@ fun Route.user() {
                     ReviewRoute.List.ReviewResponse(
                         review = review,
                         correctSize = impacts.count { history -> history.result == 1 } ,
-                        incorrectSize = impacts.count { history -> history.result == 0 }
+                        incorrectSize = impacts.count { history -> history.result == 0 },
+                        createAgo = review.createdAt.currentUnixTimediff()
                     )
                 }.toMutableList()
             )
