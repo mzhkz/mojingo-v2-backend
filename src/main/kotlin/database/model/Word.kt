@@ -11,8 +11,8 @@ class Word(
     @Expose var name: String,
     @Expose var mean: String,
     @Expose val category: Category,
-    @Expose val createdAt: Date,
-    @Expose val updatedAt: Date) {
+    @Expose val createdAt: Long,
+    @Expose val updatedAt: Long) {
 
     companion object {
         @JvmStatic
@@ -23,8 +23,8 @@ class Word(
                 name = "NOT_EXIST_WORD",
                 mean = "",
                 category = Category.notExistObject(),
-                createdAt = Date(0L),
-                updatedAt = Date(0L)
+                createdAt = 0L,
+                updatedAt = 0L
             )
     }
 

@@ -9,8 +9,8 @@ class Answer(
     @Expose val id: String,
     @Expose val user: User,
     @Expose val word: Word,
-    @Expose val createdAt: Date,
-    @Expose val updatedAt: Date,
+    @Expose val createdAt: Long,
+    @Expose val updatedAt: Long,
     @Expose val histories: MutableList<History>) {
 
     companion object {
@@ -20,8 +20,8 @@ class Answer(
                 id = "not_exist_${DigestUtils.shaHex(randomBytes()).substring(0,7)}",
                 user = User.notExistObject(),
                 word = Word.notExistObject(),
-                createdAt = Date(0L),
-                updatedAt = Date(0L),
+                createdAt = 0L,
+                updatedAt = 0L,
                 histories = mutableListOf()
             )
     }
@@ -36,7 +36,7 @@ class Answer(
     )
 
     class History(
-        @Expose val impactReview: Review,
+        @Expose val impactReviewId: String,
         @Expose val result: Int,
         @Expose val postAt: Date) {
 

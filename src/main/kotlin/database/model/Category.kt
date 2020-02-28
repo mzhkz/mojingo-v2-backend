@@ -11,8 +11,8 @@ import java.util.*
 class Category(@Expose val id: String,
                @Expose val name: String,
                @Expose val description: String,
-               @Expose val createdAt: Date,
-               @Expose val updatedAt: Date,
+               @Expose val createdAt: Long,
+               @Expose val updatedAt: Long,
                @Expose val private: Boolean) {
 
     companion object {
@@ -22,8 +22,8 @@ class Category(@Expose val id: String,
                 id = "not_exist_${DigestUtils.shaHex(randomBytes()).substring(0,7)}",
                 name = "NOT_EXIST_CATEGORY",
                 description = "",
-                createdAt = Date(0L),
-                updatedAt = Date(0L),
+                createdAt = 0L,
+                updatedAt = 0L,
                 private = true
             )
     }

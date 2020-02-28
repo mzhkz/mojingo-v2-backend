@@ -6,6 +6,7 @@ import com.aopro.wordlink.ResponseInfo
 import com.aopro.wordlink.database.DatabaseHandler
 import com.aopro.wordlink.database.model.User
 import com.aopro.wordlink.requireNotNullAndNotEmpty
+import com.aopro.wordlink.utilities.CurrentUnixTime
 import com.aopro.wordlink.utilities.DefaultZone
 import com.aopro.wordlink.utilities.splitAsPagination
 import com.google.gson.annotations.Expose
@@ -44,8 +45,8 @@ object Users {
                 lastName = model.last_name,
                 encryptedPassword = model.encrypted_password,
                 accessLevel = model.access_level,
-                createdAt = Date(model.created_at * 1000),
-                updatedAt = Date(model.updated_at * 1000)
+                createdAt = model.created_at,
+                updatedAt = model.updated_at
             )
         })
 
@@ -55,8 +56,8 @@ object Users {
             username = "root",
             firstName = "System",
             lastName = "Yoyaku",
-            createdAt = Date.from(LocalDateTime.now().atZone(DefaultZone).toInstant()),
-            updatedAt = Date.from(LocalDateTime.now().atZone(DefaultZone).toInstant()),
+            createdAt = CurrentUnixTime,
+            updatedAt = CurrentUnixTime,
             accessLevel = 2,
             encryptedPassword = encryptPassword("w1")
         ))
@@ -69,8 +70,8 @@ object Users {
             username = user.username,
             first_name = user.firstName,
             last_name = user.lastName,
-            created_at = user.createdAt.time,
-            updated_at = user.updatedAt.time,
+            created_at = user.createdAt,
+            updated_at = user.updatedAt,
             access_level = user.accessLevel,
             encrypted_password = user.encryptedPassword
         ))
@@ -87,12 +88,7 @@ object Users {
                 User.Model::first_name setTo usr.firstName,
                 User.Model::last_name setTo usr.lastName,
                 User.Model::access_level setTo usr.accessLevel,
-                User.Model::updated_at setTo Date
-                    .from(
-                        LocalDateTime
-                            .now()
-                            .atZone(DefaultZone)
-                            .toInstant()).time
+                User.Model::updated_at setTo CurrentUnixTime
             )
         }
     }
@@ -165,8 +161,8 @@ fun Route.user() {
             lastName = payload.lastName,
             encryptedPassword = encryptPassword(payload.password),
             accessLevel = payload.accessLevel,
-            createdAt = Date.from(LocalDateTime.now().atZone(DefaultZone).toInstant()),
-            updatedAt = Date.from(LocalDateTime.now().atZone(DefaultZone).toInstant())
+            createdAt = CurrentUnixTime,
+            updatedAt = CurrentUnixTime
         )
 
         Users.insertUser(user) //DBに登録
@@ -196,7 +192,7 @@ fun Route.user() {
                 profile = targetProfile,
                 reviews = targetReviews.splitAsPagination(1, 5).map { review ->
 
-                    val impacts = Answers.answers().mapNotNull { answer -> answer.histories.find { history ->  history.impactReview.id == review.id}}
+                    val impacts = Answers.answers().mapNotNull { answer -> answer.histories.find { history ->  history.impactReviewId == review.id}}
 
                     ReviewRoute.List.ReviewResponse(
                         review = review,
@@ -221,7 +217,7 @@ fun Route.user() {
             username = payload.username
             firstName = payload.firstName
             lastName = payload.lastName
-            updatedAt = Date.from(LocalDateTime.now().atZone(DefaultZone).toInstant())
+            updatedAt = CurrentUnixTime
         }
 
         Users.updateUser(target)
@@ -238,7 +234,7 @@ fun Route.user() {
 
         target.apply {
             accessLevel = payload.applyLevel
-            updatedAt = Date.from(LocalDateTime.now().atZone(DefaultZone).toInstant())
+            updatedAt = CurrentUnixTime
         }
 
         Users.updateUser(target)
@@ -255,7 +251,7 @@ fun Route.user() {
 
         target.apply {
             encryptedPassword = encryptPassword(payload.password);
-            updatedAt = Date.from(LocalDateTime.now().atZone(DefaultZone).toInstant())
+            updatedAt = CurrentUnixTime
         }
 
         Users.updateUser(target)

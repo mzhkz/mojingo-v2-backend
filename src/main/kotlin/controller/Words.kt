@@ -5,6 +5,8 @@ import com.aopro.wordlink.ResponseInfo
 import com.aopro.wordlink.database.DatabaseHandler
 import com.aopro.wordlink.database.model.Category
 import com.aopro.wordlink.database.model.Word
+import com.aopro.wordlink.requireNotNullAndNotEmpty
+import com.aopro.wordlink.utilities.CurrentUnixTime
 import com.aopro.wordlink.utilities.DefaultZone
 import com.aopro.wordlink.utilities.ensureIdElemments
 import com.mongodb.client.MongoCollection
@@ -49,8 +51,8 @@ object Words {
                 name = model.name,
                 mean = model.mean,
                 category = Categories.categories().find { category -> category.id == model.category_id } ?: Category.notExistObject(),
-                createdAt = Date(model.created_at * 1000),
-                updatedAt = Date(model.updated_at * 1000)
+                createdAt = model.created_at,
+                updatedAt = model.updated_at
             )
         })
     }
@@ -74,8 +76,8 @@ object Words {
             name = word.name,
             mean = word.mean,
             category_id = word.category.id,
-            created_at = word.createdAt.time,
-            updated_at = word.updatedAt.time
+            created_at = word.createdAt,
+            updated_at = word.updatedAt
         ))
         words.add(word)
     }
@@ -87,10 +89,8 @@ object Words {
             Word.Model::name setTo word.name,
             Word.Model::mean setTo word.mean,
             Word.Model::category_id setTo word.category.id,
-            Word.Model::created_at setTo word.createdAt.time,
-            Word.Model::updated_at setTo Date.from(
-                LocalDateTime.now().atZone(DefaultZone).toInstant()
-            ).time
+            Word.Model::created_at setTo word.createdAt,
+            Word.Model::updated_at setTo CurrentUnixTime
         )
     }
 }
@@ -123,6 +123,8 @@ fun Route.word() {
 
     post<WordRoute.Update> {
         val payload = context.receive(WordRoute.Update.Payload::class)
+        requireNotNullAndNotEmpty(payload.id, payload.means, payload.name)
+
         val target = Words.words().find { word ->  payload.id == word.id} ?: throw BadRequestException("Not found '${payload.id}' as word.")
 
         target.apply {

@@ -5,6 +5,7 @@ import com.aopro.wordlink.database.model.Answer
 import com.aopro.wordlink.database.model.Review
 import com.aopro.wordlink.database.model.User
 import com.aopro.wordlink.database.model.Word
+import com.aopro.wordlink.utilities.CurrentUnixTime
 import com.aopro.wordlink.utilities.DefaultZone
 import com.aopro.wordlink.utilities.ensureIdElemments
 import com.mongodb.client.MongoCollection
@@ -33,14 +34,12 @@ object Answers {
                 id = model._id,
                 user = Users.users().find { user -> user.id == model.userId } ?: User.notExistObject(),
                 word = Words.words().find { word -> word.id == model.wordId } ?: Word.notExistObject(),
-                createdAt = Date(model.created_at * 1000),
-                updatedAt = Date(model.updated_at * 1000),
+                createdAt = model.created_at,
+                updatedAt = model.updated_at,
                 histories = model.histories
                     .map { historyModel ->
                         Answer.History(
-                            impactReview = Reviews
-                                .reviews()
-                                .find { review -> review.id == historyModel.impact_review } ?: Review.notExistObject(),
+                            impactReviewId = historyModel.impact_review,
                             result = historyModel.result,
                             postAt = Date(historyModel.post_at * 1000)
                         )
@@ -66,11 +65,11 @@ object Answers {
             _id = answer.id,
             userId = answer.user.id,
             wordId = answer.word.id,
-            created_at = answer.createdAt.time,
-            updated_at = answer.updatedAt.time,
+            created_at = answer.createdAt,
+            updated_at = answer.updatedAt,
             histories = answer.histories.map { history ->
                 Answer.History.Model(
-                    impact_review = history.impactReview.id,
+                    impact_review = history.impactReviewId,
                     result = history.result,
                     post_at = history.postAt.time
                 )
@@ -88,36 +87,32 @@ object Answers {
                Answer.Model::wordId setTo  answer.word.id,
                Answer.Model::histories setTo answer.histories.map {history ->
                    Answer.History.Model(
-                       impact_review = history.impactReview.id,
+                       impact_review = history.impactReviewId,
                        result = history.result,
                        post_at = history.postAt.time
                    )
                },
-               Answer.Model::updated_at setTo Date
-                   .from(
-                       LocalDateTime
-                           .now()
-                           .atZone(DefaultZone)
-                           .toInstant()).time)
+               Answer.Model::updated_at setTo CurrentUnixTime
+           )
        }
     }
 }
 
 fun User.getAnswer(word: Word): Answer {
     val already = Answers.answers().find { answer -> answer.user.id == this.id && answer.word.id == word.id }
-    if (already != null) {
-        return already
+    return if (already != null) {
+        already
     } else {
         val newInstance = Answer(
             id = Answers.generateNoDuplicationId(),
             user = this,
             word = word,
-            createdAt = Date.from(LocalDateTime.now().atZone(DefaultZone).toInstant()),
-            updatedAt = Date.from(LocalDateTime.now().atZone(DefaultZone).toInstant()),
+            createdAt = CurrentUnixTime,
+            updatedAt = CurrentUnixTime,
             histories = mutableListOf()
         )
         Answers.insertAnswer(newInstance)
-        return newInstance
+        newInstance
     }
 }
 

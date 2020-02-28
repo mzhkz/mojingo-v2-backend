@@ -14,8 +14,8 @@ class Review(
     @Expose val entries: MutableList<Word>,
     @Expose val answers: MutableList<Answer>,
     @Expose val finished: Boolean, //問題の間違えの確認など、すべてのタスクが完了したかどうか。
-    @Expose val createdAt: Date,
-    @Expose val updatedAt: Date) {
+    @Expose val createdAt: Long,
+    @Expose val updatedAt: Long) {
 
     companion object {
         @JvmStatic
@@ -28,8 +28,8 @@ class Review(
                 finished = false,
                 description = "",
                 owner = User.notExistObject(),
-                createdAt = Date(0L),
-                updatedAt = Date(0L)
+                createdAt = 0L,
+                updatedAt = 0L
             )
     }
 

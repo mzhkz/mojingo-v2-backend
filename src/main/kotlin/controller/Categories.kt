@@ -6,10 +6,7 @@ import com.aopro.wordlink.database.DatabaseHandler
 import com.aopro.wordlink.database.model.Category
 import com.aopro.wordlink.database.model.Word
 import com.aopro.wordlink.requireNotNullAndNotEmpty
-import com.aopro.wordlink.utilities.DefaultZone
-import com.aopro.wordlink.utilities.ensureIdElemments
-import com.aopro.wordlink.utilities.maximumAsPagination
-import com.aopro.wordlink.utilities.splitAsPagination
+import com.aopro.wordlink.utilities.*
 import com.google.gson.annotations.Expose
 import com.mongodb.client.MongoCollection
 import io.ktor.locations.Location
@@ -42,8 +39,8 @@ object Categories {
                     id = model._id,
                     name = model.name,
                     description = model.description,
-                    createdAt = Date(model.created_at * 1000),
-                    updatedAt = Date(model.updated_at * 1000),
+                    createdAt = model.created_at,
+                    updatedAt = model.updated_at,
                     private = model.private
                 )
             })
@@ -67,8 +64,8 @@ object Categories {
             _id = category.id,
             name = category.name,
             description = category.description,
-            created_at = category.createdAt.time,
-            updated_at = category.createdAt.time,
+            created_at = category.createdAt,
+            updated_at = category.createdAt,
             private = category.private
         ))
         categories.add(category)
@@ -147,8 +144,8 @@ fun Route.category() {
             name = payload.name,
             description = payload.description,
             private = payload.private,
-            createdAt = Date.from(LocalDateTime.now().atZone(DefaultZone).toInstant()),
-            updatedAt = Date.from(LocalDateTime.now().atZone(DefaultZone).toInstant())
+            createdAt = CurrentUnixTime,
+            updatedAt = CurrentUnixTime
         )
 
         val entries = convertExcelFileToWords(
@@ -217,8 +214,8 @@ fun convertExcelFileToWords(line: MutableList<String>, category: Category): Muta
                 name = contants[1],
                 mean = contants[2],
                 category = category,
-                createdAt = Date.from(LocalDateTime.now().atZone(DefaultZone).toInstant()),
-                updatedAt = Date.from(LocalDateTime.now().atZone(DefaultZone).toInstant())
+                createdAt = CurrentUnixTime,
+                updatedAt = CurrentUnixTime
             )
         } else null
     }.toMutableList()

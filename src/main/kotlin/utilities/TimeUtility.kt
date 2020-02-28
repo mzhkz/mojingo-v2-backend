@@ -31,6 +31,8 @@ fun Long.currentUnixTimediff(): String {
     val now = CurrentUnixTime //現在時刻
     val diff = (now - this).toDouble() //時間差
 
+    println(diff)
+
     val years = Math.floor(diff / (3600.0 * 24.0 * 365.0)).toInt()
     val months = Math.floor(diff % (3600.0 * 24.0 * 365.0) / (3600.0 * 24.0 * 30)).toInt()
     val weeks = Math.floor(diff % (3600.0 * 24.0 * 30) / (3600.0 * 24.0 * 7)).toInt()

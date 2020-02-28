@@ -6,11 +6,11 @@ import com.aopro.wordlink.ResponseInfo
 import com.aopro.wordlink.database.DatabaseHandler
 import com.aopro.wordlink.database.model.*
 import com.aopro.wordlink.requireNotNullAndNotEmpty
-import com.aopro.wordlink.utilities.DefaultZone
-import com.aopro.wordlink.utilities.ensureIdElemments
-import com.aopro.wordlink.utilities.generateRandomSHA512
+import com.aopro.wordlink.utilities.*
+import com.google.gson.GsonBuilder
 import com.google.gson.annotations.Expose
 import com.mongodb.client.MongoCollection
+import io.ktor.http.cio.Response
 import io.ktor.locations.Location
 import io.ktor.locations.get
 import io.ktor.locations.post
@@ -40,7 +40,7 @@ object Reviews {
                 id = model._id,
                 name = model.name,
                 description = model.description,
-                owner = Users.users().find { usr -> usr.id == model._id } ?: User.notExistObject(),
+                owner = Users.users().find { usr -> usr.id == model.owner_id } ?: User.notExistObject(),
                 entries = model.entries
                     .map { ent -> Words.words().find { word -> word.id == ent } ?: Word.notExistObject() }
                     .toMutableList(),
@@ -50,8 +50,8 @@ object Reviews {
                     }
                     .toMutableList(),
                 finished = model.finished,
-                createdAt = Date(model.createdAt * 1000),
-                updatedAt = Date(model.updatedAt * 1000)
+                createdAt = model.createdAt,
+                updatedAt = model.createdAt
             )
         })
     }
@@ -76,9 +76,10 @@ object Reviews {
             description = review.description,
             entries = review.entries.map { entry -> entry.id } as MutableList<String>,
             answers = review.answers.map { answer -> answer.id } as MutableList<String>,
+            owner_id = review.owner.id,
             finished = review.finished,
-            updatedAt = review.updatedAt.time,
-            createdAt = review.createdAt.time
+            updatedAt = review.updatedAt,
+            createdAt = review.createdAt
 
         ))
         reviews.add(review)
@@ -93,14 +94,10 @@ object Reviews {
                 Review.Model::description setTo review.description,
                 Review.Model::entries setTo review.entries.map { entry -> entry.id } as MutableList<String>,
                 Review.Model::answers setTo review.answers.map { answer -> answer.id } as MutableList<String>,
-                Review::finished setTo review.finished,
-                Review.Model::updatedAt setTo Date
-                    .from(
-                        LocalDateTime
-                            .now()
-                            .atZone(DefaultZone)
-                            .toInstant()
-                    ).time)
+                Review.Model::finished setTo review.finished,
+                Review.Model::owner_id setTo review.owner.id,
+                Review.Model::updatedAt setTo CurrentUnixTime
+                )
         }
     }
 }
@@ -128,7 +125,8 @@ class ReviewRoute {
         data class ReviewResponse(
             @Expose val review: Review? = null,
             @Expose val correctSize: Int = 0,
-            @Expose val incorrectSize: Int = 0
+            @Expose val incorrectSize: Int = 0,
+            @Expose val createAgo: String = ""
         )
         @Location("{id}")
         data class View(val id: String = "") {
@@ -182,8 +180,8 @@ fun Route.reviews() {
             entries = entries.toMutableList(),
             answers = mutableListOf(),
             finished = false,
-            createdAt = Date.from(LocalDateTime.now().atZone(DefaultZone).toInstant()),
-            updatedAt = Date.from(LocalDateTime.now().atZone(DefaultZone).toInstant())
+            createdAt = CurrentUnixTime,
+            updatedAt = CurrentUnixTime
         )
 
         Reviews.insertReview(review) //DBに追加
@@ -210,18 +208,43 @@ fun Route.reviews() {
         val target = Reviews.reviews()
             .filter { review -> review.owner.id == targetUser.id }
             .map { review ->
-                val impacts = Answers.answers().mapNotNull { answer -> answer.histories.find { history ->  history.impactReview.id == review.id}}
+                val impacts = Answers.answers().mapNotNull { answer -> answer.histories.find { history ->  history.impactReviewId == review.id}}
                 ReviewRoute.List.ReviewResponse(
                     review = review,
                     correctSize = impacts.count { history -> history.result == 1 } ,
-                    incorrectSize = impacts.count { history -> history.result == 0 }
+                    incorrectSize = impacts.count { history -> history.result == 0 },
+                    createAgo = review.createdAt.currentUnixTimediff()
                 )
             }
 
         context.respond(ResponseInfo(
             data = target
         ))
+    }
 
+    get<ReviewRoute.List.View> {
+        val authUser = context.request.tokenAuthentication()
+        val reviewId: String = context.parameters["id"]!!
+        val userId: String = context.parameters["target"]!!
+        val targetUser =
+            if (userId == "me" || userId == authUser.id)
+                authUser
+            else {
+                if (authUser.accessLevel >= 2)
+                    Users.users().find { user -> user.id == userId } ?: throw BadRequestException("Not found '$userId' as User.")
+                else throw AuthorizationException("Your token doesn't access this content.")
+            }
+
+        val target = Reviews.reviews().find { review -> review.id ==  reviewId && targetUser.id == review.owner.id}
+            ?: throw BadRequestException("Not found $reviewId.")
+
+        val impacts = Answers.answers().mapNotNull { answer -> answer.histories.find { history ->  history.impactReviewId == target.id}}
+        context.respond(ResponseInfo(data = ReviewRoute.List.ReviewResponse(
+            review = target,
+            correctSize = impacts.count { history -> history.result == 1 } ,
+            incorrectSize = impacts.count { history -> history.result == 0 },
+            createAgo = target.createdAt.currentUnixTimediff()
+        )))
     }
 
     post<ReviewRoute.List.View.Let> {
@@ -235,8 +258,8 @@ fun Route.reviews() {
             correctsCheck = generateRandomSHA512,
             incorrectCheck = generateRandomSHA512,
             reflectReview = target,
-            createdAt = Date.from(LocalDateTime.now().atZone(DefaultZone).toInstant()),
-            updatedAt = Date.from(LocalDateTime.now().atZone(DefaultZone).toInstant())
+            createdAt = CurrentUnixTime,
+            updatedAt = CurrentUnixTime
         )
         Markers.markers.add(marker)
 
@@ -279,9 +302,9 @@ fun Route.reviews() {
         target.answers.add(answer.apply {
             histories.add(
                 Answer.History(
-                    impactReview = target,
+                    impactReviewId = target.id,
                     result = if (isCorrect) 1 else 0,
-                    postAt = Date.from(LocalDateTime.now().atZone(DefaultZone).toInstant())
+                    postAt = Date(CurrentUnixTime * 1000)
                 )
             )
         })

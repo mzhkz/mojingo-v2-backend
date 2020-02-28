@@ -11,8 +11,8 @@ class User(@Expose val id: String,
            @Expose var firstName: String,
            @Expose var lastName: String,
            @Expose var accessLevel: Int = 0,
-           @Expose val createdAt: Date,
-           @Expose var updatedAt: Date) {
+           @Expose val createdAt: Long,
+           @Expose var updatedAt: Long) {
 
     companion object {
         @JvmStatic
@@ -22,8 +22,8 @@ class User(@Expose val id: String,
                 username = "NOT_EXIST_USER",
                 firstName = "not",
                 lastName = "exist",
-                createdAt = Date(0L),
-                updatedAt = Date(0L),
+                createdAt = 0L,
+                updatedAt = 0L,
                 accessLevel = -1,
                 encryptedPassword = ""
             )

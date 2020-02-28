@@ -7,8 +7,8 @@ import java.util.*
 class Marker(
     @Expose val id: String, //Session id
     @Expose val reflectReview: Review,
-    @Expose val createdAt: Date,
-    @Expose var updatedAt: Date,
+    @Expose val createdAt: Long,
+    @Expose val updatedAt: Long,
     var correctsCheck: String, //正解したことを証明する暗号
     var incorrectCheck: String //間違えたことを証明する暗号
 
