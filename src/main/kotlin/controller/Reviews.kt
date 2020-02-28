@@ -35,6 +35,7 @@ object Reviews {
             .databaseSession
             .getCollection<Review.Model>("reviews")
 
+
         reviews.addAll(session.find().map { model ->
             Review(
                 id = model._id,
@@ -46,9 +47,8 @@ object Reviews {
                     .toMutableList(),
                 answers = model.answers
                     .map { ent ->
-                        Answers.answers().find { answer -> answer.word.id == ent } ?: Answer.notExistObject()
-                    }
-                    .toMutableList(),
+                        Answers.answers().find { answer -> answer.id == ent } ?: Answer.notExistObject()
+                    }.toMutableList(),
                 finished = model.finished,
                 createdAt = model.createdAt,
                 updatedAt = model.createdAt
@@ -86,19 +86,17 @@ object Reviews {
     }
 
     /** データベースを更新 */
-    fun updateReview(vararg reviewes: Review) {
-        reviewes.forEach { review ->
-            session.updateOne(
-                Review.Model::_id eq review.id,
-                Review.Model::name setTo review.name,
-                Review.Model::description setTo review.description,
-                Review.Model::entries setTo review.entries.map { entry -> entry.id } as MutableList<String>,
-                Review.Model::answers setTo review.answers.map { answer -> answer.id } as MutableList<String>,
-                Review.Model::finished setTo review.finished,
-                Review.Model::owner_id setTo review.owner.id,
-                Review.Model::updatedAt setTo CurrentUnixTime
-                )
-        }
+    fun updateReview(review: Review) {
+        session.updateOne(
+            Review.Model::_id eq review.id,
+            Review.Model::name setTo review.name,
+            Review.Model::description setTo review.description,
+            Review.Model::entries setTo review.entries.map { entry -> entry.id } as MutableList<String>,
+            Review.Model::answers setTo review.answers.map { answer -> answer.id } as MutableList<String>,
+            Review.Model::finished setTo review.finished,
+            Review.Model::owner_id setTo review.owner.id,
+            Review.Model::updatedAt setTo CurrentUnixTime
+        )
     }
 }
 
@@ -130,23 +128,29 @@ class ReviewRoute {
         )
         @Location("{id}")
         data class View(val id: String = "") {
+
+            @Location("/finished")
+            class Finished
+
             /** CSRF防止の為、回答専用のセッションを設ける */
-            @Location("/let/")
+            @Location("/let")
             class Let {
 
                 data class Question(
+                    @Expose val id: String = "",
                     @Expose val name: String = "",
                     @Expose val mean: String = "",
-                    @Expose val id: String = "",
+                    @Expose val wordId: String = "",
                     @Expose val representCorrect: String = "",
-                    @Expose val representIncorrect: String = ""
+                    @Expose val representIncorrect: String = "",
+                    @Expose val number: Int = 0
                 )
 
                 @Location("/mark/{marker}")
                 data class Mark(val marker: String = "") {
                     data class Payload(
-                        val result: String = "",
-                        val target: String = ""
+                        @Expose val result: String = "",
+                        @Expose val target: String = ""
                     )
                 }
             }
@@ -164,9 +168,12 @@ fun Route.reviews() {
         val payload = context.receive(ReviewRoute.Create.Payload::class)
         requireNotNullAndNotEmpty(payload.category, payload.start, payload.end, payload.shuffle)
 
-        println(payload.start)
-
         val target = Categories.categories().find { category -> category.id == payload.category } ?: throw BadRequestException("指定されたカテゴリーが見つかりせん")
+        val candidate = Words.words()
+            .filter { word -> word.category.id == target.id }
+
+        if (!(payload.start in 1..candidate.size && payload.end in (payload.start + 1)..candidate.size)) throw BadRequestException("指定された範囲が無効です ${payload.start} ~ ${payload.end}")
+
         val entries = Words.words()
             .filter { word -> word.category.id == target.id }
             .sortedBy { word -> word.number }
@@ -174,7 +181,7 @@ fun Route.reviews() {
 
         val review = Review(
             id = Reviews.generateNoDuplicationId(),
-            name = "${target.name} ${payload.start} ${payload.end}",
+            name = "${target.name} ${payload.start} ~ ${payload.end}",
             description = "",
             owner = authUser,
             entries = entries.toMutableList(),
@@ -207,6 +214,7 @@ fun Route.reviews() {
 
         val target = Reviews.reviews()
             .filter { review -> review.owner.id == targetUser.id }
+            .reversed()
             .map { review ->
                 val impacts = Answers.answers().mapNotNull { answer -> answer.histories.find { history ->  history.impactReviewId == review.id}}
                 ReviewRoute.List.ReviewResponse(
@@ -247,10 +255,25 @@ fun Route.reviews() {
         )))
     }
 
+    post<ReviewRoute.List.View.Finished> {
+        val authUser = context.request.tokenAuthentication()
+        val reviewId = context.parameters["id"]
+
+        val target = Reviews.reviews().find { review -> review.id == reviewId && authUser.id == review.owner.id}
+            ?: throw BadRequestException("この操作は、小テスト作成者の本人のみが行なえます。")
+
+        Reviews.updateReview(target.apply {
+            finished = true
+        })
+
+        context.respond(ResponseInfo(message = "has been succeed"))
+    }
+
     post<ReviewRoute.List.View.Let> {
         val authUser = context.request.tokenAuthentication()
         val reviewId = context.parameters["id"]
-        val target = Reviews.reviews().find { review -> review.id == reviewId }
+
+        val target = Reviews.reviews().find { review -> review.id == reviewId && authUser.id == review.owner.id}
             ?: throw BadRequestException("Not correct review_id")
 
         val marker = Marker(
@@ -264,16 +287,21 @@ fun Route.reviews() {
         Markers.markers.add(marker)
 
         val startIndex = target.answers.size
+        val entrySize = target.entries.size
+
+        if (startIndex >= entrySize) throw BadRequestException("全て解き終わっています！全${entrySize}問")
         val next = target.entries.get(startIndex)
 
         context.respond(
             ResponseInfo(
                 data = ReviewRoute.List.View.Let.Question(
-                    id = next.id,
-                    name = next.id,
+                    id = marker.id,
+                    wordId = next.id,
+                    name = next.name,
                     mean = next.mean,
                     representCorrect = marker.correctsCheck,
-                    representIncorrect = marker.incorrectCheck
+                    representIncorrect = marker.incorrectCheck,
+                    number = startIndex + 1
                 )
             )
         )
@@ -289,7 +317,7 @@ fun Route.reviews() {
 
         requireNotNullAndNotEmpty(payload.result, payload.target)
 
-        val target = Reviews.reviews().find { review -> review.id == reviewId }
+        val target = Reviews.reviews().find { review -> review.id == reviewId && authUser.id == review.owner.id }
             ?: throw BadRequestException("Not correct review_id")
         val marker = Markers.markers.find { marker -> marker.id == markerId }
             ?: throw BadRequestException("Not correct marker_id")
@@ -297,14 +325,17 @@ fun Route.reviews() {
         if (marker.reflectReview.id != target.id) throw BadRequestException("Not correct marker")
         val isCorrect = payload.result == marker.correctsCheck
 
-        val targetWord = Words.words().find { word -> word.id == payload.target } ?: throw BadRequestException("Not correct word_target")
+        val targetWord = Words.words().find { word -> word.id == payload.target }
+            ?: throw BadRequestException("Not correct word_target ${payload.target}")
+
         val answer = authUser.getAnswer(targetWord)
+
         target.answers.add(answer.apply {
             histories.add(
                 Answer.History(
                     impactReviewId = target.id,
                     result = if (isCorrect) 1 else 0,
-                    postAt = Date(CurrentUnixTime * 1000)
+                    postAt = CurrentUnixTime
                 )
             )
         })
@@ -327,11 +358,13 @@ fun Route.reviews() {
             context.respond(
                 ResponseInfo(
                     data = ReviewRoute.List.View.Let.Question(
-                        id = next.id,
-                        name = next.id,
+                        id = marker.id,
+                        wordId = next.id,
+                        name = next.name,
                         mean = next.mean,
                         representCorrect = marker.correctsCheck,
-                        representIncorrect = marker.incorrectCheck
+                        representIncorrect = marker.incorrectCheck,
+                        number = startIndex + 1
                     )
                 )
             )

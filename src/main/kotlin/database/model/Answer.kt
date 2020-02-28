@@ -38,7 +38,7 @@ class Answer(
     class History(
         @Expose val impactReviewId: String,
         @Expose val result: Int,
-        @Expose val postAt: Date) {
+        @Expose val postAt: Long) {
 
         data class Model(
             val impact_review: String,

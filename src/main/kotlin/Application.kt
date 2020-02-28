@@ -4,6 +4,7 @@ import com.aopro.wordlink.controller.*
 import com.aopro.wordlink.database.DatabaseHandler
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import com.google.gson.JsonSyntaxException
 import com.google.gson.annotations.Expose
 import io.ktor.application.Application
 import io.ktor.application.ApplicationCall
@@ -40,8 +41,8 @@ fun Application.module(testing: Boolean = false) {
     Categories.initialize() //カテゴリーを読み込み
     Users.initialize() //ユーザー読み込み
     Words.initialize()  // 単語データ読み込み
-    Reviews.initialize() //復習テストを読み込み
     Answers.initialize() //回答データ読み込み
+    Reviews.initialize() //復習テストを読み込み
 
     install(Locations)
 
@@ -121,7 +122,11 @@ fun Application.module(testing: Boolean = false) {
             }
 
             exception<IllegalArgumentException> { cause ->
-                context.respond(ResponseInfo(result = HttpStatusCode.BadRequest.value, message = cause.localizedMessage))
+                context.respond(ResponseInfo(result = HttpStatusCode.BadRequest.value, message = "引数が要件を満たしていません。"))
+            }
+
+            exception<JsonSyntaxException> { cause ->
+                context.respond(ResponseInfo(result = HttpStatusCode.BadRequest.value, message = "JSONオブジェクトを生成できません。"))
             }
 
             exception<Exception> { cause ->

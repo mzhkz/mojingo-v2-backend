@@ -9,8 +9,8 @@ import java.time.LocalDateTime
 import java.util.*
 
 class Category(@Expose val id: String,
-               @Expose val name: String,
-               @Expose val description: String,
+               @Expose var name: String,
+               @Expose var description: String,
                @Expose val createdAt: Long,
                @Expose val updatedAt: Long,
                @Expose val private: Boolean) {

@@ -41,7 +41,7 @@ object Answers {
                         Answer.History(
                             impactReviewId = historyModel.impact_review,
                             result = historyModel.result,
-                            postAt = Date(historyModel.post_at * 1000)
+                            postAt = historyModel.post_at
                         )
                     } as MutableList<Answer.History>
             )
@@ -71,7 +71,7 @@ object Answers {
                 Answer.History.Model(
                     impact_review = history.impactReviewId,
                     result = history.result,
-                    post_at = history.postAt.time
+                    post_at = history.postAt
                 )
             } as MutableList<Answer.History.Model>
         ))
@@ -89,7 +89,7 @@ object Answers {
                    Answer.History.Model(
                        impact_review = history.impactReviewId,
                        result = history.result,
-                       post_at = history.postAt.time
+                       post_at = history.postAt
                    )
                },
                Answer.Model::updated_at setTo CurrentUnixTime

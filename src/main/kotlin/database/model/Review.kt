@@ -13,7 +13,7 @@ class Review(
     @Expose val owner: User,
     @Expose val entries: MutableList<Word>,
     @Expose val answers: MutableList<Answer>,
-    @Expose val finished: Boolean, //問題の間違えの確認など、すべてのタスクが完了したかどうか。
+    @Expose var finished: Boolean, //問題の間違えの確認など、すべてのタスクが完了したかどうか。
     @Expose val createdAt: Long,
     @Expose val updatedAt: Long) {
 

@@ -73,19 +73,17 @@ object Categories {
 
 
     /** データベースを更新*/
-    fun updateCategory(vararg categories: Category) {
-        categories.forEach { category ->
-            session.updateOne(
-                Category.Model::_id eq category.id,
-                Category.Model::name setTo  category.name,
-                Category.Model::description setTo  category.description,
-                Category.Model::private setTo  category.private,
-                Category.Model::updated_at setTo Date
-                    .from(LocalDateTime
-                        .now()
-                        .atZone(DefaultZone)
-                        .toInstant()).time)
-        }
+    fun updateCategory(category: Category) {
+        session.updateOne(
+            Category.Model::_id eq category.id,
+            Category.Model::name setTo  category.name,
+            Category.Model::description setTo  category.description,
+            Category.Model::private setTo  category.private,
+            Category.Model::updated_at setTo Date
+                .from(LocalDateTime
+                    .now()
+                    .atZone(DefaultZone)
+                    .toInstant()).time)
     }
 }
 
@@ -113,6 +111,14 @@ class CategoryRoute {
 
         @Location("/words")
         class Words
+
+        @Location("update")
+        class Update {
+            data class Payload(
+                @Expose val name: String = "",
+                @Expose val description: String = ""
+            )
+        }
     }
 
 }
@@ -124,7 +130,7 @@ fun Route.category() {
         val categories = Categories.categories()
         val response = categories.mapNotNull { c1 ->
             categories.find { c2 -> c1.id == c2.id }
-        }.map { c3 ->
+        }.reversed().map { c3 ->
             CategoryRoute.CategoryResponse(
                 category = c3,
                 wordCount = Words.words().filter { word -> word.category.id == c3.id }.size
@@ -157,9 +163,6 @@ fun Route.category() {
         entries.forEach { word -> Words.insertWord(word) }
 
         context.respond(ResponseInfo(message = "has been succeed"))
-
-        println(entries.size)
-        println(Words.words().size)
     }
 
     get<CategoryRoute.View> {
@@ -176,6 +179,24 @@ fun Route.category() {
             category = target,
             maxPageSize = words.maximumAsPagination(25)
         )))
+
+    }
+
+    post<CategoryRoute.View.Update> {
+        context.request.tokenAuthentication(2)
+        val categoryId = context.parameters["id"]
+        val payload = context.receive(CategoryRoute.View.Update.Payload::class)
+        requireNotNullAndNotEmpty(categoryId, payload.name, payload.description) //Null and Empty Check!
+
+        val target = Categories.categories().find { category -> category.id == categoryId }
+            ?: throw BadRequestException("Not correct category_id")
+
+       Categories.updateCategory(target.apply {
+           name = payload.name
+           description = payload.description
+       })
+
+        context.respond(ResponseInfo(message = "has been succeed"))
 
     }
 

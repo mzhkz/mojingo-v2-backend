@@ -82,7 +82,6 @@ fun ApplicationRequest.tokenAuthentication(accessLevel: Int = 1): User {
     val algorithm = Algorithm.HMAC256(ApplicationConfig.JWT_SECRET)
     val jwt = try { JWT.require(algorithm).build().verify(token) }
     catch (e: Exception) {
-        e.printStackTrace()
         throw AuthorizationException("Token has been invalid.") }
 
     val id = jwt.getClaim(User.Model::_id.name).asString()
