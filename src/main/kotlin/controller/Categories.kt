@@ -92,8 +92,7 @@ class CategoryRoute {
 
     data class CategoryResponse(
         @Expose val category: Category? = null,
-        @Expose val wordCount: Int = 0,
-        @Expose val maxPageSize: Int = 0
+        @Expose val wordCount: Int = 0
     )
 
     @Location("/create")
@@ -110,7 +109,12 @@ class CategoryRoute {
     data class View(val id: String = "") {
 
         @Location("/words")
-        class Words
+        class Words {
+            data class CategoryWordsResponse(
+                @Expose val body: MutableList<Word> = mutableListOf(),
+                @Expose val pageSize: Int = 0
+            )
+        }
 
         @Location("update")
         class Update {
@@ -176,8 +180,7 @@ fun Route.category() {
         val words = Words.words().filter { word -> word.category.id == target.id }
 
         context.respond(ResponseInfo(data = CategoryRoute.CategoryResponse(
-            category = target,
-            maxPageSize = words.maximumAsPagination(25)
+            category = target
         )))
 
     }
@@ -211,10 +214,14 @@ fun Route.category() {
         val target = Categories.categories().find { category -> category.id == categoryId }
             ?:throw BadRequestException("Not correct category_id")
 
-        val words = Words.words().filter { word -> word.category.id == target.id && keyword.indexOf(keyword) != -1}
+        println("name".indexOf(keyword))
 
-        context.respond(ResponseInfo(data = words.splitAsPagination(page = page, index = 25).toMutableList()))
+        val words = Words.words().filter { word -> word.category.id == target.id && word.name.indexOf(keyword) != -1 }
 
+        context.respond(ResponseInfo(data = CategoryRoute.View.Words.CategoryWordsResponse(
+            body = words.splitAsPagination(page = page, index = 25).toMutableList(),
+            pageSize = words.maximumAsPagination(25)
+        )))
     }
 
 }
