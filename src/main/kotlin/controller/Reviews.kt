@@ -158,6 +158,7 @@ class ReviewRoute {
                     @Expose val name: String = "",
                     @Expose val mean: String = "",
                     @Expose val wordId: String = "",
+                    @Expose val owner: User? = User.notExistObject(),
                     @Expose val representCorrect: String = "",
                     @Expose val representIncorrect: String = "",
                     @Expose val number: Int = 0
@@ -321,8 +322,9 @@ fun Route.reviews() {
         val authUser = context.request.tokenAuthentication()
         val reviewId = context.parameters["id"]
 
-        val target = Reviews.reviews().find { review -> review.id == reviewId && authUser.id == review.owner.id}
+        val target = Reviews.reviews().find { review -> review.id == reviewId}
             ?: throw BadRequestException("Not correct review_id")
+        if (target.owner.id != authUser.id && authUser.accessLevel < 2) throw BadRequestException("アクセス権限がありません")
 
         val marker = Marker(
             id = generateRandomSHA512,
@@ -347,6 +349,7 @@ fun Route.reviews() {
                     wordId = next.id,
                     name = next.name,
                     mean = next.mean,
+                    owner = target.owner,
                     representCorrect = marker.correctsCheck,
                     representIncorrect = marker.incorrectCheck,
                     number = startIndex + 1
@@ -365,8 +368,9 @@ fun Route.reviews() {
 
         requireNotNullAndNotEmpty(payload.result, payload.target)
 
-        val target = Reviews.reviews().find { review -> review.id == reviewId && authUser.id == review.owner.id }
+        val target = Reviews.reviews().find { review -> review.id == reviewId }
             ?: throw BadRequestException("Not correct review_id")
+        if (target.owner.id != authUser.id && authUser.accessLevel < 2) throw BadRequestException("アクセス権限がありません")
         val marker = Markers.markers.find { marker -> marker.id == markerId }
             ?: throw BadRequestException("Not correct marker_id")
 
@@ -410,6 +414,7 @@ fun Route.reviews() {
                         wordId = next.id,
                         name = next.name,
                         mean = next.mean,
+                        owner = null,
                         representCorrect = marker.correctsCheck,
                         representIncorrect = marker.incorrectCheck,
                         number = startIndex + 1
