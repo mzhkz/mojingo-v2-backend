@@ -1,13 +1,8 @@
 package com.aopro.wordlink.database.model
 
-import com.aopro.wordlink.controller.Words
-import com.aopro.wordlink.utilities.DefaultZone
 import com.aopro.wordlink.utilities.randomBytes
 import com.google.gson.annotations.Expose
 import org.apache.commons.codec.digest.DigestUtils
-import java.time.LocalDateTime
-import java.util.*
-
 class Category(@Expose val id: String,
                @Expose var name: String,
                @Expose var description: String,

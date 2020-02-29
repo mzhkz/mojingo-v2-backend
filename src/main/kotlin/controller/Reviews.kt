@@ -9,6 +9,11 @@ import com.aopro.wordlink.requireNotNullAndNotEmpty
 import com.aopro.wordlink.utilities.*
 import com.google.gson.GsonBuilder
 import com.google.gson.annotations.Expose
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.EncodeHintType
+import com.google.zxing.client.j2se.MatrixToImageWriter
+import com.google.zxing.qrcode.QRCodeWriter
+import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel
 import com.mongodb.client.MongoCollection
 import io.ktor.http.cio.Response
 import io.ktor.locations.Location
@@ -16,13 +21,16 @@ import io.ktor.locations.get
 import io.ktor.locations.post
 import io.ktor.request.receive
 import io.ktor.response.respond
+import io.ktor.response.respondFile
 import io.ktor.routing.Route
 import org.litote.kmongo.eq
 import org.litote.kmongo.getCollection
 import org.litote.kmongo.setTo
 import org.litote.kmongo.updateOne
+import java.io.File
 import java.time.LocalDateTime
 import java.util.*
+import javax.imageio.ImageIO
 
 object Reviews {
     private val reviews = mutableListOf<Review>()
@@ -120,6 +128,12 @@ class ReviewRoute {
     @Location("{target}")
     data class List(val target: String = "") {
 
+
+        data class ListResponse(
+            @Expose val reviews: MutableList<ReviewResponse> = mutableListOf(),
+            @Expose val pageSize: Int = 0
+        )
+
         data class ReviewResponse(
             @Expose val review: Review? = null,
             @Expose val correctSize: Int = 0,
@@ -131,6 +145,9 @@ class ReviewRoute {
 
             @Location("/finished")
             class Finished
+
+            @Location("/qrcode")
+            class QRCode
 
             /** CSRF防止の為、回答専用のセッションを設ける */
             @Location("/let")
@@ -200,6 +217,8 @@ fun Route.reviews() {
     /** 指定されたユーザーの回答結果を取得する。ただし、他のユーザーのデータを取得する場合は、アクセスレベル２以上が必要。*/
     get<ReviewRoute.List> { query ->
         val authUser = context.request.tokenAuthentication()
+
+        val pageNumber: Int = context.request.queryParameters["page"]?.toInt() ?: 1
         val userId: String = context.parameters["target"]!!
         val targetUser =
             if (userId == "me" || userId == authUser.id)
@@ -215,6 +234,7 @@ fun Route.reviews() {
         val target = Reviews.reviews()
             .filter { review -> review.owner.id == targetUser.id }
             .reversed()
+            .splitAsPagination(page = pageNumber, index = 10)
             .map { review ->
                 val impacts = Answers.answers().mapNotNull { answer -> answer.histories.find { history ->  history.impactReviewId == review.id}}
                 ReviewRoute.List.ReviewResponse(
@@ -226,7 +246,10 @@ fun Route.reviews() {
             }
 
         context.respond(ResponseInfo(
-            data = target
+            data = ReviewRoute.List.ListResponse(
+                reviews = target.toMutableList(),
+                pageSize = target.maximumAsPagination(10)
+            )
         ))
     }
 
@@ -254,6 +277,31 @@ fun Route.reviews() {
             createAgo = target.createdAt.currentUnixTimediff()
         )))
     }
+
+    get<ReviewRoute.List.View.QRCode> {
+//        val authUser = context.request.tokenAuthentication()
+        val reviewId: String = context.parameters["id"]!!
+        val userId: String = context.parameters["target"]!!
+        val appDomain: String = context.request.queryParameters["appDomain"]!!
+        val target = Reviews.reviews().find { review -> review.id ==  reviewId }
+            ?: throw BadRequestException("Not found $reviewId.")
+
+        val contents = "${appDomain}/review/${userId}/${target.id}/marking?onlyRecord=true"
+        val format = BarcodeFormat.QR_CODE
+        val size = 100
+
+        val hints = Hashtable<EncodeHintType, ErrorCorrectionLevel>()
+        hints.put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.M)
+
+        val writter = QRCodeWriter()
+        val bitMatrix = writter.encode(contents, format, size, size, hints)
+        val image = MatrixToImageWriter.toBufferedImage(bitMatrix)
+        val imageFile = File("./temperature/barcode.png")
+        ImageIO.write(image, "png",imageFile)
+
+        context.respondFile(imageFile)
+    }
+
 
     post<ReviewRoute.List.View.Finished> {
         val authUser = context.request.tokenAuthentication()

@@ -35,6 +35,7 @@ dependencies {
     implementation("ch.qos.logback:logback-classic:1.2.3")
     implementation("commons-codec:commons-codec:1.5")
     implementation("com.auth0:java-jwt:3.8.2")
+    implementation("com.google.zxing:javase:3.4.0")
 }
 
 tasks.withType<KotlinCompile> {

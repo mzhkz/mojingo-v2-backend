@@ -28,6 +28,7 @@ import io.ktor.routing.routing
 import kotlinx.html.*
 import org.apache.commons.codec.digest.DigestUtils
 import org.slf4j.event.Level
+import java.io.File
 import java.lang.IllegalArgumentException
 import java.text.DateFormat
 
@@ -36,6 +37,8 @@ import java.text.DateFormat
 fun main(args: Array<String>): Unit = io.ktor.server.netty.EngineMain.main(args)
 
 fun Application.module(testing: Boolean = false) {
+
+    File("./temperature/").mkdirs()
 
     DatabaseHandler.initialize() //データベース初期化
     Categories.initialize() //カテゴリーを読み込み
