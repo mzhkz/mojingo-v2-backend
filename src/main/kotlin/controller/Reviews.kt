@@ -264,7 +264,7 @@ fun Route.reviews() {
             else {
                 if (authUser.accessLevel >= 2)
                     Users.users().find { user -> user.id == userId } ?: throw BadRequestException("Not found '$userId' as User.")
-                else throw AuthorizationException("Your token doesn't access this content.")
+                else throw AuthorizationException("アクセス権限がありません")
             }
 
         val target = Reviews.reviews().find { review -> review.id ==  reviewId && targetUser.id == review.owner.id}
@@ -309,7 +309,7 @@ fun Route.reviews() {
         val reviewId = context.parameters["id"]
 
         val target = Reviews.reviews().find { review -> review.id == reviewId && authUser.id == review.owner.id}
-            ?: throw BadRequestException("この操作は、小テスト作成者の本人のみが行なえます。")
+            ?: throw AuthorizationException("この操作は、小テスト作成者の本人のみが行なえます。")
 
         Reviews.updateReview(target.apply {
             finished = true
@@ -324,7 +324,7 @@ fun Route.reviews() {
 
         val target = Reviews.reviews().find { review -> review.id == reviewId}
             ?: throw BadRequestException("Not correct review_id")
-        if (target.owner.id != authUser.id && authUser.accessLevel < 2) throw BadRequestException("アクセス権限がありません")
+        if (target.owner.id != authUser.id && authUser.accessLevel < 2) throw AuthorizationException("アクセス権限がありません")
 
         val marker = Marker(
             id = generateRandomSHA512,
@@ -370,7 +370,7 @@ fun Route.reviews() {
 
         val target = Reviews.reviews().find { review -> review.id == reviewId }
             ?: throw BadRequestException("Not correct review_id")
-        if (target.owner.id != authUser.id && authUser.accessLevel < 2) throw BadRequestException("アクセス権限がありません")
+        if (target.owner.id != authUser.id && authUser.accessLevel < 2) throw AuthorizationException("アクセス権限がありません")
         val marker = Markers.markers.find { marker -> marker.id == markerId }
             ?: throw BadRequestException("Not correct marker_id")
 
@@ -380,7 +380,12 @@ fun Route.reviews() {
         val targetWord = Words.words().find { word -> word.id == payload.target }
             ?: throw BadRequestException("Not correct word_target ${payload.target}")
 
-        val answer = authUser.getAnswer(targetWord)
+        val answer = target.owner.getAnswer(targetWord)
+
+        println(answer.histories.size)
+
+        if (answer.histories.find { history -> history.impactReviewId == target.id } != null)
+            throw BadRequestException("この問題はすでに回答しています。${answer.word.name}")
 
         target.answers.add(answer.apply {
             histories.add(
