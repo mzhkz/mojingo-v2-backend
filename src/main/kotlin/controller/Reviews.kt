@@ -277,7 +277,7 @@ fun Route.reviews() {
     }
 
     get<ReviewRoute.List.View.QRCode> {
-//        val authUser = context.request.tokenAuthentication()
+        val authUser = context.request.tokenAuthentication()
         val reviewId: String = context.parameters["id"]!!
         val userId: String = context.parameters["target"]!!
         val appDomain: String = context.request.queryParameters["appDomain"]!!

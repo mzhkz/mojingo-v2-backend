@@ -185,7 +185,9 @@ fun Route.user() {
 
         val targetProfile = Users.users().find { user -> user.id == id } ?: throw BadRequestException("Not found '$targetId' as User.")
         val targetReviews = Reviews.reviews()
-            .filter { review -> review.owner.id == targetProfile.id }.toMutableList()
+            .filter { review -> review.owner.id == targetProfile.id }
+            .reversed()
+            .toMutableList()
 
         context.respond(ResponseInfo(
             data = UserRoute.Profile.ProfileResponse(
