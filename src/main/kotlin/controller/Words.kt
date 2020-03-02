@@ -6,9 +6,8 @@ import com.aopro.wordlink.database.DatabaseHandler
 import com.aopro.wordlink.database.model.Category
 import com.aopro.wordlink.database.model.Word
 import com.aopro.wordlink.requireNotNullAndNotEmpty
-import com.aopro.wordlink.utilities.CurrentUnixTime
-import com.aopro.wordlink.utilities.DefaultZone
-import com.aopro.wordlink.utilities.ensureIdElemments
+import com.aopro.wordlink.utilities.*
+import com.google.gson.annotations.Expose
 import com.mongodb.client.MongoCollection
 import io.ktor.locations.Location
 import io.ktor.locations.get
@@ -94,35 +93,44 @@ object Words {
         )
     }
 }
-@Location("/word")
+@Location("/words")
 class WordRoute {
 
-    @Location("/d/:id")
-    data class Get(val id: String)
-
-    @Location("/update")
-    class Update {
-        data class Payload(
-            val id: String = "",
-            val name: String = "",
-            val means: String = ""
+    @Location("/search")
+    class Search {
+        data class SearchWordsResponse(
+            @Expose val body: MutableList<Word> = mutableListOf(),
+            @Expose val resultSize: Int = 0,
+            @Expose val pageSize: Int = 0
         )
     }
 
+    @Location("/{id}")
+    data class View(val id: String = "") {
+        @Location("/update")
+        class Update {
+            data class Payload(
+                @Expose val id: String = "",
+                @Expose val name: String = "",
+                @Expose val means: String = ""
+            )
+        }
+    }
 }
 
 fun Route.word() {
 
 
-    get<WordRoute.Get> { query ->
+    get<WordRoute.View> { query ->
         context.request.tokenAuthentication()
         val target = Words.words().find { word ->  query.id == word.id} ?: throw BadRequestException("Not found '${query.id}' as word.")
 
         context.respond(ResponseInfo(data = target))
     }
 
-    post<WordRoute.Update> {
-        val payload = context.receive(WordRoute.Update.Payload::class)
+    post<WordRoute.View.Update> {
+        context.request.tokenAuthentication(2)
+        val payload = context.receive(WordRoute.View.Update.Payload::class)
         requireNotNullAndNotEmpty(payload.id, payload.means, payload.name)
 
         val target = Words.words().find { word ->  payload.id == word.id} ?: throw BadRequestException("Not found '${payload.id}' as word.")
@@ -136,6 +144,24 @@ fun Route.word() {
 
         context.respond(ResponseInfo(message = "has been succeed."))
 
+    }
+
+    get<WordRoute.Search> {
+        context.request.tokenAuthentication()
+        val page = context.request.queryParameters["page"]?.toInt() ?: 1
+        val keyword = context.request.queryParameters["keyword"] ?: ""
+
+        requireNotNullAndNotEmpty(page) //Null and Empty Check!
+
+        val words = if (keyword.isNotEmpty()) Words.words().filter { word -> word.name.indexOf(keyword) != -1 }
+        else mutableListOf()
+
+        context.respond(ResponseInfo(data = WordRoute.Search.SearchWordsResponse(
+            body = words.splitAsPagination(page = page, index = 25).toMutableList(),
+            resultSize = words.size,
+            pageSize = words.maximumAsPagination(25)
+        )
+        ))
     }
 
 }

@@ -28,6 +28,7 @@ object ApplicationConfig {
         System.getenv(env("FRONTEND_DOMAIN")) ?: throw IllegalAccessException("接続を許可するフロントエンドのドメインの環境変数を設定してください。")
     }
 
+
     /** MongoデータベースのURL*/
     val DATABASE_URL by lazy {
         System.getenv(env("DATABASE_URL")) ?: throw IllegalAccessException("データベースURLの環境変数を設定してください。")
@@ -42,6 +43,11 @@ object ApplicationConfig {
     val ROOT_PASSWORD by lazy {
         System.getenv(env("ROOT_PASSWORD"))
             ?: if (ALLOWED_ROOT) throw IllegalAccessException("ROOTアカウントを有効化するためには、環境変数にてパスワードの登録が必要です。") else ""
+    }
+
+    /** パスワードSALT*/
+    val PASSWORD_SECRET by lazy {
+        System.getenv(env("PASSWORD_SECRET")) ?: throw IllegalAccessException("パスワードシークレットの環境変数を設定してください。")
     }
 
     /** JWT Secret */

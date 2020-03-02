@@ -269,4 +269,4 @@ fun Route.user() {
 /** ハッシュ化したパスワードが一致するかどうか*/
 fun isSamePassword(original: String, encrypted: String) = encryptPassword(original) == encrypted
 
-fun encryptPassword(original: String) =  DigestUtils.sha256Hex(original)
+fun encryptPassword(original: String) =  DigestUtils.sha256Hex( ApplicationConfig.PASSWORD_SECRET + original + "|wordlink_eitango_english")
