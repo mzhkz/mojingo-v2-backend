@@ -47,8 +47,8 @@ fun Route.authentication() {
         val target = Users.users().find { usr -> usr.username == requestEmail }
             ?: throw BadRequestException("ユーザーネーム、またはパスワードが間違っています。")
 
-        if (target.accessLevel < 0)
-            throw BadRequestException("このアカウントは現在メンテナンス中です。")
+        if (target.accessLevel < 1)
+            throw BadRequestException("このアカウントは現在メンテナンス中のため、ログインできません。")
 
         if (isSamePassword(payload.base64Password, target.encryptedPassword)) {
             context.respond(ResponseInfo(data = target, message = generateAuthenticationToken(target)))
