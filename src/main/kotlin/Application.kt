@@ -83,9 +83,7 @@ fun Application.module(testing: Boolean = false) {
 
         //ホスト設定
         val whitelist = mutableListOf<String>()
-        whitelist.add("localhost:3000")
-        whitelist.add("localhost:8889")
-        whitelist.add("localhost:9000")
+        whitelist.add(ApplicationConfig.FRONTEND_APP_DOMAIN)
         whitelist.forEach {host ->
             host(host, schemes = listOf("http", "https"))
         }
@@ -98,11 +96,6 @@ fun Application.module(testing: Boolean = false) {
 
 
     routing {
-
-        get {
-            call.respond(ResponseInfo(message = "testtest"))
-//            call.respond("aaaaa")
-        }
 
         authentication()
         user()

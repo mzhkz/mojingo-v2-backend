@@ -214,8 +214,6 @@ fun Route.category() {
         val target = Categories.categories().find { category -> category.id == categoryId }
             ?:throw BadRequestException("Not correct category_id")
 
-        println("name".indexOf(keyword))
-
         val words = Words.words().filter { word -> word.category.id == target.id && word.name.indexOf(keyword) != -1 }
 
         context.respond(ResponseInfo(data = CategoryRoute.View.Words.CategoryWordsResponse(

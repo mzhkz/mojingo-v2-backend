@@ -7,7 +7,6 @@ import com.aopro.wordlink.database.DatabaseHandler
 import com.aopro.wordlink.database.model.*
 import com.aopro.wordlink.requireNotNullAndNotEmpty
 import com.aopro.wordlink.utilities.*
-import com.google.gson.GsonBuilder
 import com.google.gson.annotations.Expose
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.EncodeHintType
@@ -15,7 +14,6 @@ import com.google.zxing.client.j2se.MatrixToImageWriter
 import com.google.zxing.qrcode.QRCodeWriter
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel
 import com.mongodb.client.MongoCollection
-import io.ktor.http.cio.Response
 import io.ktor.locations.Location
 import io.ktor.locations.get
 import io.ktor.locations.post
@@ -28,7 +26,6 @@ import org.litote.kmongo.getCollection
 import org.litote.kmongo.setTo
 import org.litote.kmongo.updateOne
 import java.io.File
-import java.time.LocalDateTime
 import java.util.*
 import javax.imageio.ImageIO
 
@@ -287,7 +284,7 @@ fun Route.reviews() {
         val target = Reviews.reviews().find { review -> review.id ==  reviewId }
             ?: throw BadRequestException("Not found $reviewId.")
 
-        val contents = "${appDomain}/review/${userId}/${target.id}/marking?onlyRecord=true"
+        val contents = "${appDomain}/reviews/${userId}/${target.id}/marking?onlyRecord=true"
         val format = BarcodeFormat.QR_CODE
         val size = 100
 
@@ -381,8 +378,6 @@ fun Route.reviews() {
             ?: throw BadRequestException("Not correct word_target ${payload.target}")
 
         val answer = target.owner.getAnswer(targetWord)
-
-        println(answer.histories.size)
 
         if (answer.histories.find { history -> history.impactReviewId == target.id } != null)
             throw BadRequestException("この問題はすでに回答しています。${answer.word.name}")

@@ -14,11 +14,10 @@
 ### Environments Settings
 |ENV|Type|Description|DEFAULT|
 |:---|:---|:---|:---|
-|WORDLINK_DATABASE_HOST|string|データベース接続のアドレス|localhost|
-|WORDLINK_DATABASE_PORT|int|データベース接続のポート|27018|
-|WORDLINK_DATABASE_NAME|string|データベース接続の名前|wordlink|
-|WORDLINK_DATABASE_USER|string|データベース認証のユーザ名|application|
-|WORDLINK_DATABASE_PASSWORD|string|データベース認証のパスワード|wordlink123|
-|WORDLINK_JWT_SECRET|string|JsonWebTokenの秘密文字列|****|
+|WORDLINK_DATABASE_URL|string|データベース接続のURL|localhost|
+|WORDLINK_FRONTEND_DOMAIN|string|接続を許可するフロントエンドのドメイン（CORS）|****|
+|WORDLINK_SESSION_SECRET|string|JsonWebTokenの秘密文字列|****|
+|WORDLINK_ALLOWED_ROOT|boolean|ROOTアカウントを有効にするかどうか|true|
+|WORDLINK_ROOT_PASSWORD|string|ROOTアカウントのパスワード|****|
 |KTOR_ENV|string|本番環境フラグ|
 

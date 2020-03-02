@@ -1,11 +1,8 @@
 package com.aopro.wordlink.controller
 
-import com.aopro.wordlink.AuthorizationException
-import com.aopro.wordlink.BadRequestException
-import com.aopro.wordlink.ResponseInfo
+import com.aopro.wordlink.*
 import com.aopro.wordlink.database.DatabaseHandler
 import com.aopro.wordlink.database.model.User
-import com.aopro.wordlink.requireNotNullAndNotEmpty
 import com.aopro.wordlink.utilities.CurrentUnixTime
 import com.aopro.wordlink.utilities.DefaultZone
 import com.aopro.wordlink.utilities.currentUnixTimediff
@@ -51,17 +48,19 @@ object Users {
             )
         })
 
-        //Rootアカウント
-        users.add(User(
-            id = "roottest",
-            username = "root",
-            firstName = "System",
-            lastName = "Yoyaku",
-            createdAt = CurrentUnixTime,
-            updatedAt = CurrentUnixTime,
-            accessLevel = 2,
-            encryptedPassword = encryptPassword("w1")
-        ))
+        if (ApplicationConfig.ALLOWED_ROOT) {
+            //Rootアカウント
+            users.add(User(
+                id = "system_root",
+                username = "root",
+                firstName = "System",
+                lastName = "Administrator",
+                createdAt = CurrentUnixTime,
+                updatedAt = CurrentUnixTime,
+                accessLevel = 2,
+                encryptedPassword = encryptPassword(ApplicationConfig.ROOT_PASSWORD)
+            ))
+        }
     }
 
     /** データベースに記録ユーザーを登録する*/

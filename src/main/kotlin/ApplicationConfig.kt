@@ -1,12 +1,15 @@
 package com.aopro.wordlink
 
+import com.aopro.wordlink.utilities.generateRandomSHA512
+import java.lang.Exception
+import java.lang.IllegalArgumentException
+
 object ApplicationConfig {
 
     private const val ENV_PREFIX = "WORDLINK"
 
     /** 環境変数名を取得*/
     val env: (String) -> String = { value ->
-        println("${ENV_PREFIX}_${value}")
         "${ENV_PREFIX}_${value}"
     }
 
@@ -14,54 +17,35 @@ object ApplicationConfig {
         KTOR_ENV == "prod"
     }
 
+
+
     val KTOR_ENV by lazy {
         System.getenv(env("KTOR_ENV"))?: "dev"
     }
 
-    val TOP_LEVEL_APP_DOMAIN by lazy {
-        System.getenv(env("TOP_LEVEL_APP_DOMAIN"))
-    }
-
+    /** 接続を許可するフロントエンドのドメイン (CORS ) */
     val FRONTEND_APP_DOMAIN by lazy {
-        System.getenv(env("FRONTEND_APP_DOMAIN"))
+        System.getenv(env("FRONTEND_DOMAIN")) ?: throw IllegalAccessException("接続を許可するフロントエンドのドメインの環境変数を設定してください。")
     }
 
-    val BACKEND_APP_DOMAIN by lazy {
-        System.getenv(env("BACKEND_APP_DOMAIN"))
-    }
-
-    /** Mongoデータベースのホスト*/
-    val DATABASE_HOST by lazy {
-        System.getenv(env("DATABASE_HOST"))
-    }
-
-    /** Mongoデータベースのポート */
-    val DATABASE_PORT by lazy {
-        System.getenv(env("DATABASE_PORT"))
-    }
-
-    /** Mongoデータベース名 */
-    val DATABASE_NAME by lazy {
-        System.getenv(env("DATABASE_NAME")) ?: "wordlink"
+    /** MongoデータベースのURL*/
+    val DATABASE_URL by lazy {
+        System.getenv(env("DATABASE_URL")) ?: throw IllegalAccessException("データベースURLの環境変数を設定してください。")
     }
 
     /** Mongoデータベースのユーザ */
-    val DATABASE_USER by lazy {
-        System.getenv(env("DATABASE_USER"))
+    val ALLOWED_ROOT by lazy {
+        System.getenv(env("ALLOW_ROOT")) == "1"
     }
 
-    /** Mongoデータベースのパスワード */
-    val DATABASE_PASSWORD by lazy {
-        System.getenv(env("DATABASE_PASSWORD"))
-    }
-
-    /** フロントエンドのドメイン */
-    val FRONTEND_DOMAIN by lazy {
-        System.getenv(env("FRONTEND_DOMAIN"))
+    /** Mongoデータベースのユーザ */
+    val ROOT_PASSWORD by lazy {
+        System.getenv(env("ROOT_PASSWORD"))
+            ?: if (ALLOWED_ROOT) throw IllegalAccessException("ROOTアカウントを有効化するためには、環境変数にてパスワードの登録が必要です。") else ""
     }
 
     /** JWT Secret */
-    val JWT_SECRET by lazy {
-        System.getenv(env("JWT_SECRET"))
+    val SESSION_SECRET by lazy {
+        System.getenv(env("SESSION_SECRET")) ?: throw IllegalAccessException("セッションシークレットの環境変数を設定してください。")
     }
 }

@@ -16,7 +16,8 @@ object DatabaseHandler {
      * データベースに接続する
      */
     fun initialize() {
-        clientSession = KMongo.createClient(MongoClientURI("mongodb://application:wordlink123@localhost:27018/?authMechanism=SCRAM-SHA-1&authSource=admin"))
+        clientSession = KMongo
+            .createClient(MongoClientURI(ApplicationConfig.DATABASE_URL))
         databaseSession = clientSession.getDatabase("wordlink")
     }
 

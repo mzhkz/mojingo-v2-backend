@@ -44,7 +44,6 @@ fun Route.authentication() {
         requireNotNullAndNotEmpty(payload.base64Email, payload.base64Password)
 
         val requestEmail = payload.base64Email
-        println(requestEmail)
         val target = Users.users().find { usr -> usr.username == requestEmail } ?: throw BadRequestException("ユーザーネーム、またはパスワードが間違っています。")
 
         if (isSamePassword(payload.base64Password, target.encryptedPassword)) {
@@ -62,7 +61,7 @@ fun Route.authentication() {
 
 fun generateAuthenticationToken(user: User): String {
     val expiration = LocalDateTime.now().plusMonths(1).atZone(DefaultZone)
-    val algorithm = Algorithm.HMAC256(ApplicationConfig.JWT_SECRET)
+    val algorithm = Algorithm.HMAC256(ApplicationConfig.SESSION_SECRET)
     return JWT.create()
         .withExpiresAt(Date.from(expiration.toInstant()))
         .withClaim(User.Model::_id.name, user.id)
@@ -79,10 +78,10 @@ fun ApplicationRequest.tokenAuthentication(accessLevel: Int = 1): User {
     val token = header("X-Access-Token")
         ?: throw AuthorizationException("リクエスト形式が無効です")
 
-    val algorithm = Algorithm.HMAC256(ApplicationConfig.JWT_SECRET)
+    val algorithm = Algorithm.HMAC256(ApplicationConfig.SESSION_SECRET)
     val jwt = try { JWT.require(algorithm).build().verify(token) }
     catch (e: Exception) {
-        throw AuthorizationException("トークンが無効です。再読み込みをしてください.") }
+        throw AuthorizationException("トークンが無効です。再ログインを行ってください.") }
 
     val id = jwt.getClaim(User.Model::_id.name).asString()
     val user = Users.users().find { user -> user.id == id } ?: throw AuthorizationException("トークンが無効です。再読み込みをしてください")
