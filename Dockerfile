@@ -2,7 +2,7 @@ FROM gradle:jdk11
 
 WORKDIR /usr/src/app
 
-#ENV WORDLINK_DATABASE_URL mongodb://localhost:27018/?readPreference=primary&appname=WordLinkBackEnd&ssl=false
+ENV WORDLINK_DATABASE_URL mongodb://192.168.1.15:27018/
 ENV WORDLINK_FRONTEND_DOMAIN wordlink-demo-b1.mozhok.me
 ENV WORDLINK_SESSION_SECRET wordlink-session-secret
 ENV WORDLINK_ALLOWED_ROOT 1

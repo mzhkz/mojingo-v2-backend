@@ -31,8 +31,7 @@ object ApplicationConfig {
 
     /** MongoデータベースのURL*/
     val DATABASE_URL by lazy {
-//        System.getenv(env("DATABASE_URL")) ?: throw IllegalAccessException("データベースURLの環境変数を設定してください。")
-        "mongodb://localhost:27018/?appname=WordLinkBackEnd&ssl=false"
+        System.getenv(env("DATABASE_URL")) ?: throw IllegalAccessException("データベースURLの環境変数を設定してください。")
     }
 
     /** Mongoデータベースのユーザ */
