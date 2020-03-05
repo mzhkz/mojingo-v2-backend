@@ -1,7 +1,9 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
+    
     kotlin("jvm") version "1.3.61"
+    id("com.github.johnrengelman.shadow") version "4.0.4"
     application
 }
 
@@ -40,4 +42,20 @@ dependencies {
 
 tasks.withType<KotlinCompile> {
     kotlinOptions.jvmTarget = "1.8"
+}
+
+tasks {
+    named<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowJar") {
+        archiveBaseName.set("wordlink-application")
+        mergeServiceFiles()
+        manifest {
+            attributes(mapOf("Main-Class" to "io.ktor.server.netty.EngineMain"))
+        }
+    }
+}
+
+tasks {
+    build {
+        dependsOn(shadowJar)
+    }
 }
