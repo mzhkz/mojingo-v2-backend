@@ -48,7 +48,10 @@ object Users {
             )
         })
 
+        println("${ApplicationConfig.ALLOWED_ROOT} ADD: ${ApplicationConfig.ROOT_PASSWORD}")
+
         if (ApplicationConfig.ALLOWED_ROOT) {
+
             //Rootアカウント
             users.add(User(
                 id = "system_root",
