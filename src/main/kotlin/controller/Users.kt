@@ -57,7 +57,7 @@ object Users {
                 lastName = "Administrator",
                 createdAt = CurrentUnixTime,
                 updatedAt = CurrentUnixTime,
-                accessLevel = 2,
+                accessLevel = 3,
                 encryptedPassword = encryptPassword(ApplicationConfig.ROOT_PASSWORD)
             ))
         }
@@ -92,6 +92,11 @@ object Users {
             )
         }
     }
+
+    fun deleteUser(target: User) {
+        session.deleteOne(User.Model::_id eq target.id)
+        users.removeIf { user -> user.id == target.id }
+    }
 }
 
 
@@ -118,7 +123,8 @@ class UserRoute {
 
         data class ProfileResponse(
             @Expose val profile: User? = null,
-            @Expose val reviews: MutableList<ReviewRoute.List.ReviewResponse> = mutableListOf()
+            @Expose val reviews: MutableList<ReviewRoute.List.ReviewResponse> = mutableListOf(),
+            @Expose val createdAgo: String = ""
         )
 
         @Location("/reset-pass")
@@ -145,6 +151,9 @@ class UserRoute {
                 @Expose val applyLevel: Int = 0
             )
         }
+
+        @Location("/dismiss")
+        class Dismiss
     }
 }
 
@@ -153,6 +162,9 @@ fun Route.user() {
     post <UserRoute.Enroll>{
         val authUser = context.request.tokenAuthentication(2)
         val payload = context.receive(UserRoute.Enroll.Payload::class)
+
+        if (Users.users().any { user -> user.username == payload.username })
+            throw BadRequestException("このユーザーIDはすでに使用されています。")
 
         val user = User(
            id = UUID.randomUUID().toString().replace("-", ""),
@@ -202,7 +214,8 @@ fun Route.user() {
                         incorrectSize = impacts.count { history -> history.result == 0 },
                         createAgo = review.createdAt.currentUnixTimediff()
                     )
-                }.toMutableList()
+                }.toMutableList(),
+                createdAgo = targetProfile.createdAt.currentUnixTimediff()
             )
             , message = "successful"))
     }
@@ -215,6 +228,9 @@ fun Route.user() {
 
         val targetId = context.parameters["id"]
         val target = Users.users().find { user -> user.id == targetId } ?: throw BadRequestException("ユーザが見つかりません")
+
+        if (Users.users().any { user -> user.username == payload.username })
+            throw BadRequestException("このユーザーIDはすでに使用されています。")
 
         target.apply {
             username = payload.username
@@ -231,6 +247,9 @@ fun Route.user() {
         val authUser = context.request.tokenAuthentication(2)
         val payload = context.receive(UserRoute.Profile.Qualify.Payload::class)
         requireNotNullAndNotEmpty(payload.applyLevel)
+
+        if (payload.applyLevel >= authUser.accessLevel)
+            throw BadRequestException("操作者の付与権限以上の権限を付与することはできません。")
 
         val targetId = context.parameters["id"]
         val target = Users.users().find { user -> user.id == targetId } ?: throw BadRequestException("ユーザが見つかりません")
@@ -253,11 +272,21 @@ fun Route.user() {
         val target = Users.users().find { user -> user.id == targetId } ?: throw BadRequestException("ユーザが見つかりません")
 
         target.apply {
-            encryptedPassword = encryptPassword(payload.password);
+            encryptedPassword = encryptPassword(payload.password)
             updatedAt = CurrentUnixTime
         }
 
         Users.updateUser(target)
+        context.respond(ResponseInfo(data = target, message = "successful"))
+    }
+
+    post<UserRoute.Profile.Dismiss> {
+        val authUser = context.request.tokenAuthentication(3)
+
+        val targetId = context.parameters["id"]
+        val target = Users.users().find { user -> user.id == targetId } ?: throw BadRequestException("ユーザが見つかりません")
+
+        Users.deleteUser(target)
         context.respond(ResponseInfo(data = target, message = "successful"))
     }
 

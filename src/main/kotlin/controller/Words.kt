@@ -69,16 +69,18 @@ object Words {
 
 
     /**　データベースにデータを挿入する*/
-    fun insertWord(word: Word) {
-        session.insertOne(Word.Model(
-            _id = word.id,
-            name = word.name,
-            mean = word.mean,
-            category_id = word.category.id,
-            created_at = word.createdAt,
-            updated_at = word.updatedAt
-        ))
-        words.add(word)
+    fun insertWord(entries: MutableList<Word>) {
+        session.insertMany(entries.map { word ->
+            Word.Model(
+                _id = word.id,
+                name = word.name,
+                mean = word.mean,
+                category_id = word.category.id,
+                created_at = word.createdAt,
+                updated_at = word.updatedAt
+            )
+        })
+        words.addAll(entries)
     }
 
     /** データを更新する */
@@ -92,6 +94,17 @@ object Words {
             Word.Model::updated_at setTo CurrentUnixTime
         )
     }
+
+    fun deleteWord(target: Word) {
+        session.deleteOne(Word.Model::_id eq target.id)
+        words.removeIf { word -> target.id == word.id }
+    }
+
+    fun deleteWordDependCategory(target: Category) {
+        session.deleteMany(Word.Model::category_id eq target.id)
+        words.removeAll { word -> word.category.id == target.id }
+    }
+
 }
 @Location("/words")
 class WordRoute {

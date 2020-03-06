@@ -193,6 +193,7 @@ fun Route.reviews() {
             .filter { word -> word.category.id == target.id }
             .sortedBy { word -> word.number }
             .subList(payload.start - 1, payload.end)
+            .shuffled()
 
         val review = Review(
             id = Reviews.generateNoDuplicationId(),

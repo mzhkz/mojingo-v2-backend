@@ -85,6 +85,18 @@ object Categories {
                     .atZone(DefaultZone)
                     .toInstant()).time)
     }
+
+    /**
+     * データベースから単語を削除する
+     */
+    fun deleteCategory(category: Category, related: Boolean = false) {
+        session.deleteOne(Category.Model::_id eq category.id)
+        categories.removeIf { categ -> categ.id == category.id }
+
+        if (related) {
+            Words.deleteWordDependCategory(category)
+        }
+    }
 }
 
 @Location("categories")
@@ -92,7 +104,8 @@ class CategoryRoute {
 
     data class CategoryResponse(
         @Expose val category: Category? = null,
-        @Expose val wordCount: Int = 0
+        @Expose val wordCount: Int = 0,
+        @Expose val createdAgo: String = ""
     )
 
     @Location("/create")
@@ -121,6 +134,13 @@ class CategoryRoute {
             data class Payload(
                 @Expose val name: String = "",
                 @Expose val description: String = ""
+            )
+        }
+
+        @Location("delete")
+        class Delete {
+            data class Payload(
+                @Expose val withDepend: Boolean = true
             )
         }
     }
@@ -164,7 +184,7 @@ fun Route.category() {
         )
 
         Categories.insertCategory(instance)
-        entries.forEach { word -> Words.insertWord(word) }
+        Words.insertWord(entries)
 
         context.respond(ResponseInfo(message = "has been succeed"))
     }
@@ -180,7 +200,8 @@ fun Route.category() {
         val words = Words.words().filter { word -> word.category.id == target.id }
 
         context.respond(ResponseInfo(data = CategoryRoute.CategoryResponse(
-            category = target
+            category = target,
+            createdAgo = target.createdAt.currentUnixTimediff()
         )))
 
     }
@@ -198,6 +219,21 @@ fun Route.category() {
            name = payload.name
            description = payload.description
        })
+
+        context.respond(ResponseInfo(message = "has been succeed"))
+    }
+
+
+    post<CategoryRoute.View.Delete> {
+        context.request.tokenAuthentication(3)
+        val categoryId = context.parameters["id"]
+        val payload = context.receive(CategoryRoute.View.Delete.Payload::class)
+        requireNotNullAndNotEmpty(categoryId, payload.withDepend) //Null and Empty Check!
+
+        val target = Categories.categories().find { category -> category.id == categoryId }
+            ?: throw BadRequestException("Not correct category_id")
+
+        Categories.deleteCategory(target, true)
 
         context.respond(ResponseInfo(message = "has been succeed"))
 
