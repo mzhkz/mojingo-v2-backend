@@ -230,6 +230,9 @@ fun Route.user() {
         val targetId = context.parameters["id"]
         val target = Users.users().find { user -> user.id == targetId } ?: throw BadRequestException("ユーザが見つかりません")
 
+        if (authUser.accessLevel < target.accessLevel)
+            throw BadRequestException("操作者の付与権限以上のユーザーは操作できません。乗っ取りなどの場合は、環境変数から管理者アカウントを有効にしてください。")
+
         if (Users.users().any { user -> user.username == payload.username })
             throw BadRequestException("このユーザーIDはすでに使用されています。")
 
@@ -255,6 +258,9 @@ fun Route.user() {
         val targetId = context.parameters["id"]
         val target = Users.users().find { user -> user.id == targetId } ?: throw BadRequestException("ユーザが見つかりません")
 
+        if (authUser.accessLevel < target.accessLevel)
+            throw BadRequestException("操作者の付与権限以上のユーザーは操作できません。乗っ取りなどの場合は、環境変数から管理者アカウントを有効にしてください。")
+
         target.apply {
             accessLevel = payload.applyLevel
             updatedAt = CurrentUnixTime
@@ -271,6 +277,9 @@ fun Route.user() {
 
         val targetId = context.parameters["id"]
         val target = Users.users().find { user -> user.id == targetId } ?: throw BadRequestException("ユーザが見つかりません")
+
+        if (authUser.accessLevel < target.accessLevel)
+            throw BadRequestException("操作者の付与権限以上のユーザーは操作できません。乗っ取りなどの場合は、環境変数から管理者アカウントを有効にしてください。")
 
         target.apply {
             encryptedPassword = encryptPassword(payload.password)
