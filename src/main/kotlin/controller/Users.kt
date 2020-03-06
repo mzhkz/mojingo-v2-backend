@@ -4,7 +4,6 @@ import com.aopro.wordlink.*
 import com.aopro.wordlink.database.DatabaseHandler
 import com.aopro.wordlink.database.model.User
 import com.aopro.wordlink.utilities.CurrentUnixTime
-import com.aopro.wordlink.utilities.DefaultZone
 import com.aopro.wordlink.utilities.currentUnixTimediff
 import com.aopro.wordlink.utilities.splitAsPagination
 import com.google.gson.annotations.Expose
@@ -20,7 +19,6 @@ import org.litote.kmongo.eq
 import org.litote.kmongo.getCollection
 import org.litote.kmongo.setTo
 import org.litote.kmongo.updateOne
-import java.time.LocalDateTime
 import java.util.*
 
 object Users {
@@ -48,9 +46,9 @@ object Users {
             )
         })
 
-        println("${ApplicationConfig.ALLOWED_ROOT} ADD: ${ApplicationConfig.ROOT_PASSWORD}")
+        println("${ApplicationConfig.ALLOW_ROOT} ADD: ${ApplicationConfig.ROOT_PASSWORD}")
 
-        if (ApplicationConfig.ALLOWED_ROOT) {
+        if (ApplicationConfig.ALLOW_ROOT) {
 
             //Rootアカウント
             users.add(User(

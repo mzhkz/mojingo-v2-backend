@@ -1,9 +1,5 @@
 package com.aopro.wordlink
 
-import com.aopro.wordlink.utilities.generateRandomSHA512
-import java.lang.Exception
-import java.lang.IllegalArgumentException
-
 object ApplicationConfig {
 
     private const val ENV_PREFIX = "WORDLINK"
@@ -35,14 +31,14 @@ object ApplicationConfig {
     }
 
     /** Mongoデータベースのユーザ */
-    val ALLOWED_ROOT by lazy {
+    val ALLOW_ROOT by lazy {
         System.getenv(env("ALLOW_ROOT")) == "1"
     }
 
     /** Mongoデータベースのユーザ */
     val ROOT_PASSWORD by lazy {
         System.getenv(env("ROOT_PASSWORD"))
-            ?: if (ALLOWED_ROOT) throw IllegalAccessException("ROOTアカウントを有効化するためには、環境変数にてパスワードの登録が必要です。") else ""
+            ?: if (ALLOW_ROOT) throw IllegalAccessException("ROOTアカウントを有効化するためには、環境変数にてパスワードの登録が必要です。") else ""
     }
 
     /** パスワードSALT*/
