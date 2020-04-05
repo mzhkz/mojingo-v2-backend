@@ -27,14 +27,16 @@ object Words {
     fun words() = words.toMutableList()
 
     fun initialize() {
-         GoogleAPI.setUpSheet
+         Categories.categories().forEach { category ->
+             asyncBySheet(category)
+         }
     }
 
     fun asyncBySheet(category: Category) {
         val readResult = GoogleAPI.setUpSheet.Spreadsheets().values().get(category.spreadSheetId, "A1:D").execute()
         val entries = readResult.getValues().mapIndexed { index, line ->
             Word(
-                number  = index,
+                number  = index+1,
                 name = line[0] as String,
                 mean = line[1] as String,
                 description = if (line.size > 2) line[2] as String else "",

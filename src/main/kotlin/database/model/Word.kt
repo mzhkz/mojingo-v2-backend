@@ -16,7 +16,6 @@ class Word(
         @JvmStatic
         fun notExistObject() =
             Word(
-//                id = "not_exist_${DigestUtils.shaHex(randomBytes()).substring(0,7)}",
                 number = -1, //number of category
                 name = "NOT_EXIST_WORD",
                 mean = "",
