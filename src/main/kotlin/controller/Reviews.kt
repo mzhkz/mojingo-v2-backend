@@ -35,32 +35,42 @@ object Reviews {
 
     fun reviews() = reviews.toMutableList()
 
+    /** Sheetを更新する */
+    fun replace(user: User) {
+        reviews.removeAll { review -> review.owner == user }
+        reviews.addAll(session.find(Review.Model::owner_id eq user.id).map { model ->
+            adapt(model)
+        })
+    }
+
+    private fun adapt(model: Review.Model) =
+        Review(
+            id = model._id,
+            name = model.name,
+            description = model.description,
+            owner = Users.users().find { usr -> usr.id == model.owner_id } ?: User.notExistObject(),
+            entries = model.entries
+                .map { ent ->
+                    val pair = ent.fromBase64().split("||")
+                    println(pair)
+                    Words.words().find { word -> word.name == pair[1] && word.category.id == pair[0] } ?: Word.notExistObject() }
+                .toMutableList(),
+            answers = model.answers
+                .map { ent ->
+                    Answers.answers().find { answer -> answer.id == ent } ?: Answer.notExistObject()
+                }.toMutableList(),
+            finished = model.finished,
+            createdAt = model.createdAt,
+            updatedAt = model.createdAt
+        )
+
     fun initialize() {
         session = DatabaseHandler
             .databaseSession
             .getCollection<Review.Model>("reviews")
 
-
         reviews.addAll(session.find().map { model ->
-            Review(
-                id = model._id,
-                name = model.name,
-                description = model.description,
-                owner = Users.users().find { usr -> usr.id == model.owner_id } ?: User.notExistObject(),
-                entries = model.entries
-                    .map { ent ->
-                        val pair = ent.fromBase64().split("||")
-                        println(pair)
-                        Words.words().find { word -> word.name == pair[1] && word.category.id == pair[0] } ?: Word.notExistObject() }
-                    .toMutableList(),
-                answers = model.answers
-                    .map { ent ->
-                        Answers.answers().find { answer -> answer.id == ent } ?: Answer.notExistObject()
-                    }.toMutableList(),
-                finished = model.finished,
-                createdAt = model.createdAt,
-                updatedAt = model.createdAt
-            )
+            adapt(model)
         })
     }
 

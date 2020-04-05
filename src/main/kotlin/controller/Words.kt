@@ -15,6 +15,7 @@ import io.ktor.locations.get
 import io.ktor.response.respond
 import io.ktor.routing.Route
 import io.ktor.routing.get
+import io.ktor.util.caseInsensitiveMap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.litote.kmongo.getCollection
@@ -32,18 +33,45 @@ object Words {
          }
     }
 
-    fun asyncBySheet(category: Category) {
-        val readResult = GoogleAPI.setUpSheet.Spreadsheets().values().get(category.spreadSheetId, "A1:D").execute()
+    /** Spreadsheetと同期 */
+    fun asyncBySheet(target: Category) {
+        val presenceCheck = mutableListOf<String>()
+        val readResult = GoogleAPI.setUpSheet.Spreadsheets().values().get(target.spreadSheetId, "A1:D").execute()
         val entries = readResult.getValues().mapIndexed { index, line ->
             Word(
                 number  = index+1,
                 name = line[0] as String,
                 mean = line[1] as String,
                 description = if (line.size > 2) line[2] as String else "",
-                category = category
+                category = target
             )
         }
-        words.addAll(entries)
+
+        entries.forEach { entry ->
+            val already = words.find { word -> word.name == entry.name && word.category.id == target.id }
+            if (already == null) {
+                words.add(entry)
+            } else {
+                already.apply {
+                    number = entry.number
+                    mean = entry.mean
+                    description = entry.description
+                }
+            }
+            presenceCheck.add(entry.name)
+        }
+
+        words.filter { word -> word.category.id == target.id && !presenceCheck.contains(word.name) }
+            .forEach { delete ->
+                words.removeIf { word -> word.category.id == target.id && word.name == delete.name }
+                delete.apply {
+                    number = -1 //number of category
+                    name = "-- 存在しない単語 --"
+                    mean = ""
+                    category = Category.notExistObject()
+                    description = ""
+                }
+            }
     }
 
     /** Google Text-To-Speech-APIを使用して発音のMP3ファイルを生成する*/

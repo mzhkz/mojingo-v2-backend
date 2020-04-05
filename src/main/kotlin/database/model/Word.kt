@@ -1,23 +1,20 @@
 package com.aopro.wordlink.database.model
 
-import com.aopro.wordlink.utilities.randomBytes
 import com.google.gson.annotations.Expose
-import org.apache.commons.codec.digest.DigestUtils
-import java.util.*
 
 class Word(
-    @Expose val number: Int,
+    @Expose var number: Int,
     @Expose var name: String,
     @Expose var mean: String,
     @Expose var description: String,
-    @Expose val category: Category) {
+    @Expose var category: Category) {
 
     companion object {
         @JvmStatic
         fun notExistObject() =
             Word(
                 number = -1, //number of category
-                name = "NOT_EXIST_WORD",
+                name = "-- 存在しない単語 --",
                 mean = "",
                 category = Category.notExistObject(),
                 description = ""

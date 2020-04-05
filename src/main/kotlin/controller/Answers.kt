@@ -24,28 +24,38 @@ object Answers {
 
     fun answers() = answers.toMutableList()
 
+    /** Sheetを更新する */
+    fun replace(user: User) {
+        answers.removeAll { answer -> answer.user == user }
+        answers.addAll( session.find(Answer.Model::userId eq user.id).map { model->
+            adapt(model)
+        })
+    }
+
+    private fun adapt(model: Answer.Model) =
+        Answer(
+            id = model._id,
+            user = Users.users().find { user -> user.id == model.userId } ?: User.notExistObject(),
+            word = Words.words().find { word -> word.category.id == model.category_id && word.name == model.word_name } ?: Word.notExistObject(),
+            createdAt = model.created_at,
+            updatedAt = model.updated_at,
+            histories = model.histories
+                .map { historyModel ->
+                    Answer.History(
+                        impactReviewId = historyModel.impact_review,
+                        result = historyModel.result,
+                        postAt = historyModel.post_at
+                    )
+                } as MutableList<Answer.History>
+        )
+
     fun initialize() {
         session = DatabaseHandler
             .databaseSession
             .getCollection<Answer.Model>("answers")
 
         answers.addAll(session.find().map { model->
-            println(Words.words().find { word -> word.category.id == model.category_id && word.name == model.word_name })
-            Answer(
-                id = model._id,
-                user = Users.users().find { user -> user.id == model.userId } ?: User.notExistObject(),
-                word = Words.words().find { word -> word.category.id == model.category_id && word.name == model.word_name } ?: Word.notExistObject(),
-                createdAt = model.created_at,
-                updatedAt = model.updated_at,
-                histories = model.histories
-                    .map { historyModel ->
-                        Answer.History(
-                            impactReviewId = historyModel.impact_review,
-                            result = historyModel.result,
-                            postAt = historyModel.post_at
-                        )
-                    } as MutableList<Answer.History>
-            )
+            adapt(model)
         })
     }
 

@@ -136,6 +136,9 @@ class CategoryRoute {
             )
         }
 
+        @Location("sync")
+        class Sync
+
         @Location("delete")
         class Delete {
             data class Payload(
@@ -178,12 +181,29 @@ fun Route.category() {
             updatedAt = CurrentUnixTime
         )
        try {
-           Words.asyncBySheet(category = instance)
+           Words.asyncBySheet(target = instance)
        } catch (e: Exception) {
            e.printStackTrace()
            throw BadRequestException("sheet-request@mojingo-v2-prod.iam.gserviceaccount.com")
        }
         Categories.insertCategory(instance)
+
+        context.respond(ResponseInfo(message = "has been succeed"))
+    }
+
+    post<CategoryRoute.View.Sync> {
+        context.request.tokenAuthentication(2) //管理者レベルからアクセス可能
+        val categoryId = context.parameters["id"]
+        requireNotNullAndNotEmpty(categoryId) //Null and Empty Check!
+
+        val target = Categories.categories().find { category -> category.id == categoryId }
+            ?: throw BadRequestException("Not correct category_id")
+        try {
+            Words.asyncBySheet(target = target)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            throw BadRequestException("sheet-request@mojingo-v2-prod.iam.gserviceaccount.com")
+        }
 
         context.respond(ResponseInfo(message = "has been succeed"))
     }
