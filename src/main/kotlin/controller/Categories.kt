@@ -19,6 +19,7 @@ import org.litote.kmongo.eq
 import org.litote.kmongo.getCollection
 import org.litote.kmongo.setTo
 import org.litote.kmongo.updateOne
+import java.lang.Exception
 import java.time.LocalDateTime
 import java.util.*
 
@@ -38,6 +39,7 @@ object Categories {
                 Category(
                     id = model._id,
                     name = model.name,
+                    spreadSheetId = model.spread_sheet_id,
                     description = model.description,
                     createdAt = model.created_at,
                     updatedAt = model.updated_at,
@@ -63,6 +65,7 @@ object Categories {
         session.insertOne(Category.Model(
             _id = category.id,
             name = category.name,
+            spread_sheet_id = category.spreadSheetId,
             description = category.description,
             created_at = category.createdAt,
             updated_at = category.createdAt,
@@ -89,13 +92,9 @@ object Categories {
     /**
      * データベースから単語を削除する
      */
-    fun deleteCategory(category: Category, related: Boolean = false) {
+    fun deleteCategory(category: Category) {
         session.deleteOne(Category.Model::_id eq category.id)
         categories.removeIf { categ -> categ.id == category.id }
-
-        if (related) {
-            Words.deleteWordDependCategory(category)
-        }
     }
 }
 
@@ -114,7 +113,7 @@ class CategoryRoute {
             @Expose val name: String = "",
             @Expose val description: String = "",
             @Expose val private: Boolean = false,
-            @Expose val csvBody: MutableList<String> = mutableListOf()
+            @Expose val sheetId: String = ""
         )
     }
 
@@ -167,24 +166,24 @@ fun Route.category() {
         context.request.tokenAuthentication(2) //管理者レベルからアクセス可能
 
         val payload = context.receive(CategoryRoute.Create.Payload::class)
-        requireNotNullAndNotEmpty(payload.name, payload.csvBody) //Null and Empty Check!
+        requireNotNullAndNotEmpty(payload.name, payload.sheetId) //Null and Empty Check!
 
         val instance = Category(
             id = Categories.generateNoDuplicationId(),
             name = payload.name,
+            spreadSheetId = payload.sheetId,
             description = payload.description,
             private = payload.private,
             createdAt = CurrentUnixTime,
             updatedAt = CurrentUnixTime
         )
-
-        val entries = convertExcelFileToWords(
-            line = payload.csvBody,
-            category = instance
-        )
-
+       try {
+           Words.asyncBySheet(category = instance)
+       } catch (e: Exception) {
+           e.printStackTrace()
+           throw BadRequestException("sheet-request@mojingo-v2-prod.iam.gserviceaccount.com")
+       }
         Categories.insertCategory(instance)
-        Words.insertWord(entries)
 
         context.respond(ResponseInfo(message = "has been succeed"))
     }
@@ -233,8 +232,6 @@ fun Route.category() {
         val target = Categories.categories().find { category -> category.id == categoryId }
             ?: throw BadRequestException("Not correct category_id")
 
-        Categories.deleteCategory(target, true)
-
         context.respond(ResponseInfo(message = "has been succeed"))
 
     }
@@ -257,29 +254,5 @@ fun Route.category() {
             pageSize = words.maximumAsPagination(25)
         )))
     }
-
-}
-
-/** CSVファイルから単語を読み込む*/
-fun convertExcelFileToWords(line: MutableList<String>, category: Category): MutableList<Word> {
-    val regex = Regex("^(No)(,)(Name)(,)(Mean)\$") //No,Name,Mean
-    var assignNumber = 0
-
-    return line.mapNotNull { str ->
-        val match = regex.matchEntire(str) //タイトルかどうか
-        if (match == null && str.indexOf(",") > 0) {
-            val contants = str.split(",")
-            assignNumber+=1
-            Word(
-                id = Words.generateId(),
-                number = assignNumber,
-                name = contants[1],
-                mean = contants[2],
-                category = category,
-                createdAt = CurrentUnixTime,
-                updatedAt = CurrentUnixTime
-            )
-        } else null
-    }.toMutableList()
 
 }

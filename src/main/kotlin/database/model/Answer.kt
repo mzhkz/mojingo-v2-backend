@@ -29,7 +29,8 @@ class Answer(
     data class Model(
         val _id: String = "",
         val userId: String = "",
-        val wordId: String = "",
+        val word_name: String = "",
+        val category_id: String = "",
         val created_at: Long = 0L,
         val updated_at: Long = 0L,
         val histories: MutableList<History.Model> = mutableListOf()

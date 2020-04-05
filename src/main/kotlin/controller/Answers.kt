@@ -33,7 +33,7 @@ object Answers {
             Answer(
                 id = model._id,
                 user = Users.users().find { user -> user.id == model.userId } ?: User.notExistObject(),
-                word = Words.words().find { word -> word.id == model.wordId } ?: Word.notExistObject(),
+                word = Words.words().find { word -> word.category.name == model.category_id && word.name == model.word_name } ?: Word.notExistObject(),
                 createdAt = model.created_at,
                 updatedAt = model.updated_at,
                 histories = model.histories
@@ -64,7 +64,7 @@ object Answers {
         session.insertOne(Answer.Model(
             _id = answer.id,
             userId = answer.user.id,
-            wordId = answer.word.id,
+            word_name = answer.word.name,
             created_at = answer.createdAt,
             updated_at = answer.updatedAt,
             histories = answer.histories.map { history ->
@@ -84,7 +84,7 @@ object Answers {
            session.updateOne(
                Answer.Model::_id eq answer.id,
                Answer.Model::userId setTo  answer.user.id,
-               Answer.Model::wordId setTo  answer.word.id,
+               Answer.Model::word_name setTo  answer.word.name,
                Answer.Model::histories setTo answer.histories.map {history ->
                    Answer.History.Model(
                        impact_review = history.impactReviewId,
@@ -99,7 +99,7 @@ object Answers {
 }
 
 fun User.getAnswer(word: Word): Answer {
-    val already = Answers.answers().find { answer -> answer.user.id == this.id && answer.word.id == word.id }
+    val already = Answers.answers().find { answer -> answer.user.id == this.id && answer.word.name == word.name }
     return if (already != null) {
         already
     } else {

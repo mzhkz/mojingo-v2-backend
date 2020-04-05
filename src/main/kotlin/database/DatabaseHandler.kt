@@ -18,7 +18,7 @@ object DatabaseHandler {
     fun initialize() {
         clientSession = KMongo
             .createClient(MongoClientURI(ApplicationConfig.DATABASE_URL))
-        databaseSession = clientSession.getDatabase("wordlink")
+        databaseSession = clientSession.getDatabase("mojingo-v2")
     }
 
 }

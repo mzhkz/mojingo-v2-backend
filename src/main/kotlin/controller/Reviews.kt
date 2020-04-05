@@ -48,7 +48,9 @@ object Reviews {
                 description = model.description,
                 owner = Users.users().find { usr -> usr.id == model.owner_id } ?: User.notExistObject(),
                 entries = model.entries
-                    .map { ent -> Words.words().find { word -> word.id == ent } ?: Word.notExistObject() }
+                    .map { ent ->
+                        val pair = ent.fromBase64().split("||")
+                        Words.words().find { word -> word.name == pair[1] && word.category.name == pair[0] } ?: Word.notExistObject() }
                     .toMutableList(),
                 answers = model.answers
                     .map { ent ->
@@ -79,7 +81,7 @@ object Reviews {
             _id = review.id,
             name = review.name,
             description = review.description,
-            entries = review.entries.map { entry -> entry.id } as MutableList<String>,
+            entries = review.entries.map { entry -> "${entry.category.name}||${entry.name}".toBase64()} as MutableList<String>,
             answers = review.answers.map { answer -> answer.id } as MutableList<String>,
             owner_id = review.owner.id,
             finished = review.finished,
@@ -96,7 +98,7 @@ object Reviews {
             Review.Model::_id eq review.id,
             Review.Model::name setTo review.name,
             Review.Model::description setTo review.description,
-            Review.Model::entries setTo review.entries.map { entry -> entry.id } as MutableList<String>,
+            Review.Model::entries setTo review.entries.map { entry ->"${entry.category.name}||${entry.name}".toBase64() } as MutableList<String>,
             Review.Model::answers setTo review.answers.map { answer -> answer.id } as MutableList<String>,
             Review.Model::finished setTo review.finished,
             Review.Model::owner_id setTo review.owner.id,
@@ -344,7 +346,7 @@ fun Route.reviews() {
             ResponseInfo(
                 data = ReviewRoute.List.View.Let.Question(
                     id = marker.id,
-                    wordId = next.id,
+                    wordId = "${next.category.name}||${next.name}".toBase64(),
                     name = next.name,
                     mean = next.mean,
                     owner = target.owner,
@@ -375,7 +377,9 @@ fun Route.reviews() {
         if (marker.reflectReview.id != target.id) throw BadRequestException("Not correct marker")
         val isCorrect = payload.result == marker.correctsCheck
 
-        val targetWord = Words.words().find { word -> word.id == payload.target }
+        val targetWord = Words.words().find { word ->
+            val pair = payload.target.fromBase64().split("||")
+            word.category.name == pair[0] && word.name == pair[1] }
             ?: throw BadRequestException("Not correct word_target ${payload.target}")
 
         val answer = target.owner.getAnswer(targetWord)
@@ -412,7 +416,7 @@ fun Route.reviews() {
                 ResponseInfo(
                     data = ReviewRoute.List.View.Let.Question(
                         id = marker.id,
-                        wordId = next.id,
+                        wordId = "${next.category.name}||${next.name}".toBase64(),
                         name = next.name,
                         mean = next.mean,
                         owner = null,

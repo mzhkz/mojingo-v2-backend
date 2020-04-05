@@ -27,9 +27,21 @@ object Words {
     fun words() = words.toMutableList()
 
     fun initialize() {
-        val values = GoogleAPI.setUpSheet.Spreadsheets().get("").forEach { t, u ->
+         GoogleAPI.setUpSheet
+    }
 
+    fun asyncBySheet(category: Category) {
+        val readResult = GoogleAPI.setUpSheet.Spreadsheets().values().get(category.spreadSheetId, "A1:D").execute()
+        val entries = readResult.getValues().mapIndexed { index, line ->
+            Word(
+                number  = index,
+                name = line[0] as String,
+                mean = line[1] as String,
+                description = if (line.size > 2) line[2] as String else "",
+                category = category
+            )
         }
+        words.addAll(entries)
     }
 
     /** Google Text-To-Speech-APIを使用して発音のMP3ファイルを生成する*/
@@ -79,7 +91,7 @@ class WordRoute {
         )
     }
 
-    @Location("{category}/{id}")
+    @Location("{category}/{name}")
     data class View(val category: String = "", val name: String = "") {
 
         @Location("/update")
