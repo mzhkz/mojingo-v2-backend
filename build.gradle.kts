@@ -38,6 +38,10 @@ dependencies {
     implementation("commons-codec:commons-codec:1.5")
     implementation("com.auth0:java-jwt:3.8.2")
     implementation("com.google.zxing:javase:3.4.0")
+    implementation("com.google.apis:google-api-services-sheets:v4-rev614-1.18.0-rc")
+    implementation("com.google.api-client:google-api-client:1.30.6")
+    implementation("com.google.oauth-client:google-oauth-client-jetty:1.30.6")
+    implementation("com.google.cloud:google-cloud-texttospeech:0.98.0-beta")
 }
 
 tasks.withType<KotlinCompile> {

@@ -5,6 +5,7 @@ import com.google.gson.annotations.Expose
 import org.apache.commons.codec.digest.DigestUtils
 class Category(@Expose val id: String,
                @Expose var name: String,
+               val spreadSheetId: String,
                @Expose var description: String,
                @Expose val createdAt: Long,
                @Expose val updatedAt: Long,
@@ -16,6 +17,7 @@ class Category(@Expose val id: String,
             Category(
                 id = "not_exist_${DigestUtils.shaHex(randomBytes()).substring(0,7)}",
                 name = "NOT_EXIST_CATEGORY",
+                spreadSheetId = "NONE",
                 description = "",
                 createdAt = 0L,
                 updatedAt = 0L,
@@ -26,6 +28,7 @@ class Category(@Expose val id: String,
     data class Model(
         val _id: String = "",
         val name: String = "",
+        val spread_sheet_id: String,
         val description: String = "",
         val created_at: Long = 0L,
         val updated_at: Long = 0L,

@@ -6,7 +6,6 @@ import org.apache.commons.codec.digest.DigestUtils
 import java.util.*
 
 class Word(
-    @Expose val id: String,
     @Expose val number: Int,
     @Expose var name: String,
     @Expose var mean: String,
@@ -18,7 +17,7 @@ class Word(
         @JvmStatic
         fun notExistObject() =
             Word(
-                id = "not_exist_${DigestUtils.shaHex(randomBytes()).substring(0,7)}",
+//                id = "not_exist_${DigestUtils.shaHex(randomBytes()).substring(0,7)}",
                 number = -1, //number of category
                 name = "NOT_EXIST_WORD",
                 mean = "",
@@ -29,7 +28,6 @@ class Word(
     }
 
     data class Model(
-        val _id: String = "",
         val name: String = "",
         val mean: String = "",
         val category_id: String = "",

@@ -40,6 +40,8 @@ fun Application.module(testing: Boolean = false) {
 
     File("./temperature/").mkdirs()
 
+    GoogleAPI.initialize()
+
     DatabaseHandler.initialize() //データベース初期化
     Categories.initialize() //カテゴリーを読み込み
     Users.initialize() //ユーザー読み込み

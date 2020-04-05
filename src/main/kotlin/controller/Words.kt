@@ -7,105 +7,66 @@ import com.aopro.wordlink.database.model.Category
 import com.aopro.wordlink.database.model.Word
 import com.aopro.wordlink.requireNotNullAndNotEmpty
 import com.aopro.wordlink.utilities.*
+import com.google.cloud.texttospeech.v1.*
 import com.google.gson.annotations.Expose
 import com.mongodb.client.MongoCollection
 import io.ktor.locations.Location
 import io.ktor.locations.get
-import io.ktor.locations.post
-import io.ktor.request.receive
 import io.ktor.response.respond
 import io.ktor.routing.Route
 import io.ktor.routing.get
-import org.litote.kmongo.eq
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import org.litote.kmongo.getCollection
-import org.litote.kmongo.setTo
-import org.litote.kmongo.updateOne
-import java.time.LocalDateTime
-import java.util.*
+import java.io.File
 
 object Words {
 
     private val words = mutableListOf<Word>()
-    private lateinit var session: MongoCollection<Word.Model>
 
     fun words() = words.toMutableList()
 
     fun initialize() {
-        session = DatabaseHandler
-            .databaseSession
-            .getCollection<Word.Model>("words")
+        val values = GoogleAPI.setUpSheet.Spreadsheets().get("").forEach { t, u ->
 
-        val cacheHash = hashMapOf<String, Int>()
-
-        words.addAll(session.find().map { model ->
-            var cacheMapNumber = cacheHash[model.category_id] ?: 0
-            if (cacheMapNumber == null) {
-                cacheHash[model.category_id] = 0
-            }
-            cacheHash[model.category_id] = cacheMapNumber + 1
-
-            Word(
-                id = model._id,
-                number = cacheMapNumber + 1,
-                name = model.name,
-                mean = model.mean,
-                category = Categories.categories().find { category -> category.id == model.category_id } ?: Category.notExistObject(),
-                createdAt = model.created_at,
-                updatedAt = model.updated_at
-            )
-        })
-    }
-
-    tailrec fun generateId(): String {
-        val length = 8
-        var temp = ""
-        val elements = ensureIdElemments.toMutableList()
-        for (i in 0..length) {
-            temp += elements.random()
         }
-
-        return if (words.filter { word -> word.id == temp }.isEmpty()) temp else generateId()
     }
 
-
-    /**　データベースにデータを挿入する*/
-    fun insertWord(entries: MutableList<Word>) {
-        session.insertMany(entries.map { word ->
-            Word.Model(
-                _id = word.id,
-                name = word.name,
-                mean = word.mean,
-                category_id = word.category.id,
-                created_at = word.createdAt,
-                updated_at = word.updatedAt
-            )
-        })
-        words.addAll(entries)
-    }
-
-    /** データを更新する */
-    fun updateWord(word: Word) {
-        session.updateOne(
-            Word.Model::_id eq word.id,
-            Word.Model::name setTo word.name,
-            Word.Model::mean setTo word.mean,
-            Word.Model::category_id setTo word.category.id,
-            Word.Model::created_at setTo word.createdAt,
-            Word.Model::updated_at setTo CurrentUnixTime
-        )
-    }
-
-    fun deleteWord(target: Word) {
-        session.deleteOne(Word.Model::_id eq target.id)
-        words.removeIf { word -> target.id == word.id }
-    }
-
-    fun deleteWordDependCategory(target: Category) {
-        session.deleteMany(Word.Model::category_id eq target.id)
-        words.removeAll { word -> word.category.id == target.id }
+    /** Google Text-To-Speech-APIを使用して発音のMP3ファイルを生成する*/
+    fun getSpeechMP3(word: Word, language: Language): File {
+        val fileName = "${word.name}-${language.code}-speech.mp3"
+        val cache = File("./temperature/$fileName")
+        if (cache.exists()) //音声キャッシュが存在した場合はキャッシュを返す
+            return cache
+        else {
+            val textToSpeechClient = TextToSpeechClient.create()
+            runBlocking(Dispatchers.IO) {
+                val audioContent = textToSpeechClient.synthesizeSpeech(
+                    SynthesisInput.newBuilder()
+                        .setText(word.name)
+                        .build(),
+                    VoiceSelectionParams.newBuilder()
+                        .setLanguageCode(language.code)
+                        .setSsmlGender(SsmlVoiceGender.MALE)
+                        .build(),
+                    AudioConfig.newBuilder()
+                        .setAudioEncoding(AudioEncoding.MP3)
+                        .build()
+                ).audioContent
+                cache.createNewFile() //ファイル生成
+                cache.outputStream().write(audioContent.toByteArray())
+            }
+            return cache
+        }
     }
 
 }
+
+enum class Language(val code: String) {
+    Japanese("ja-JP"),
+    English("en-US"),
+}
+
 @Location("/words")
 class WordRoute {
 
@@ -118,8 +79,9 @@ class WordRoute {
         )
     }
 
-    @Location("/{id}")
-    data class View(val id: String = "") {
+    @Location("{category}/{id}")
+    data class View(val category: String = "", val name: String = "") {
+
         @Location("/update")
         class Update {
             data class Payload(
@@ -128,6 +90,9 @@ class WordRoute {
                 @Expose val means: String = ""
             )
         }
+
+        @Location("pronounce")
+        class Pronounce
     }
 }
 
@@ -136,28 +101,12 @@ fun Route.word() {
 
     get<WordRoute.View> { query ->
         context.request.tokenAuthentication()
-        val target = Words.words().find { word ->  query.id == word.id} ?: throw BadRequestException("Not found '${query.id}' as word.")
+        val target = Words.words().find { word -> query.name == word.name && query.category == word.category.id }
+            ?: throw BadRequestException("Not found '${query.category}/${query.name}' as word.")
 
         context.respond(ResponseInfo(data = target))
     }
 
-    post<WordRoute.View.Update> {
-        context.request.tokenAuthentication(2)
-        val payload = context.receive(WordRoute.View.Update.Payload::class)
-        requireNotNullAndNotEmpty(payload.id, payload.means, payload.name)
-
-        val target = Words.words().find { word ->  payload.id == word.id} ?: throw BadRequestException("Not found '${payload.id}' as word.")
-
-        target.apply {
-            name = payload.name
-            mean = payload.means
-        }
-
-        Words.updateWord(word = target)
-
-        context.respond(ResponseInfo(message = "has been succeed."))
-
-    }
 
     get<WordRoute.Search> {
         context.request.tokenAuthentication()
@@ -169,12 +118,27 @@ fun Route.word() {
         val words = if (keyword.isNotEmpty()) Words.words().filter { word -> word.name.indexOf(keyword) != -1 }
         else mutableListOf()
 
-        context.respond(ResponseInfo(data = WordRoute.Search.SearchWordsResponse(
-            body = words.splitAsPagination(page = page, index = 25).toMutableList(),
-            resultSize = words.size,
-            pageSize = words.maximumAsPagination(25)
+        context.respond(
+            ResponseInfo(
+                data = WordRoute.Search.SearchWordsResponse(
+                    body = words.splitAsPagination(page = page, index = 25).toMutableList(),
+                    resultSize = words.size,
+                    pageSize = words.maximumAsPagination(25)
+                )
+            )
         )
-        ))
+    }
+
+    get<WordRoute.View.Pronounce> {
+        context.request.tokenAuthentication()
+        val name = context.parameters["name"]
+        val category = context.parameters["category"]
+        val language = context.request.queryParameters["language"] ?: "en-US"
+
+        val target = Words.words().find { word -> name == word.name && category == word.category.id }
+            ?: throw BadRequestException("Not found '$category/$name' as word.")
+
+        context.respond(Words.getSpeechMP3(target, Language.valueOf(language)))
     }
 
 }
