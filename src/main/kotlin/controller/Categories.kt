@@ -202,7 +202,7 @@ fun Route.category() {
             Words.asyncBySheet(target = target)
         } catch (e: Exception) {
             e.printStackTrace()
-            throw BadRequestException("同期中にエラーが発生ました.")
+            throw BadRequestException("同期中にエラーが発生ました. ${e.localizedMessage}")
         }
 
         context.respond(ResponseInfo(message = "has been succeed"))
