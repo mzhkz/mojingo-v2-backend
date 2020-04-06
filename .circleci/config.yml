@@ -5,11 +5,11 @@ jobs:
       - image: circleci/openjdk:11-jdk
     working_directory: ~/repo
     environment:
-      BUILD_APP: build/libs/mojingov2_backend_app-0.1.1.jar # 成果物
+      BUILD_APP: build/libs/mojingo_backend_app.jar # 成果物
       HOST_NAME: 104.199.186.211 # デプロイ先のホスト名
       USER_NAME: mojingo_app  # デプロイ先のユーザー名
       APP_DIR: /opt/mojingov2/backend/ #デプロイ先のディレクトリ
-      SERVICE_NAME: mojingov2-backend
+      APP_NAME: mojingov2-backend
     steps:
       - checkout
       # 依存関係をダウンロードしてキャシュする
@@ -25,7 +25,7 @@ jobs:
           key: v1-dependencies-{{ .Branch }}-{{ checksum "build.gradle.kts" }}
       - run:
           name: Build and Generate JAR
-          command: gradle shadowJar
+          command: gradle shdowJar
       # 設定した秘密鍵のFingerPrintを追記する
       - add_ssh_keys:
           fingerprints:
