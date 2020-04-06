@@ -15,14 +15,14 @@ jobs:
       # 依存関係をダウンロードしてキャシュする
       - restore_cache:
           keys:
-            - v1-dependencies-{{ .Branch }}-{{ checksum "build.gradle" }}
+            - v1-dependencies-{{ .Branch }}-{{ checksum "build.gradle.kts" }}
             - v1-dependencies-{{ .Branch }}-
             - v1-dependencies-
       - run: gradle dependencies
       - save_cache:
           paths:
             - ~/.gradle
-          key: v1-dependencies-{{ .Branch }}-{{ checksum "build.gradle" }}
+          key: v1-dependencies-{{ .Branch }}-{{ checksum "build.gradle.kts" }}
       - run:
           name: Build and Generate JAR
           command: gradle shadowJar
