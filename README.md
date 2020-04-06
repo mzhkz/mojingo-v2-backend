@@ -15,5 +15,6 @@
 |MOJINGOV2_PASSWORD_SECRET|string|Passwordの暗号化ハッシュトークン|****|
 |MOJINGOV2_ALLOW_ROOT|int|ROOTアカウントを有効にするかどうか|0|
 |MOJINGOV2_ROOT_PASSWORD|string|ROOTアカウントのパスワード|****|
+|MOJINGOV2_GOOGLE_P12_LOCATION|string|P12ファイルのロケーション|****|
 |KTOR_ENV|string|本番環境フラグ|false|
 

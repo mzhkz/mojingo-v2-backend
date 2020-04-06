@@ -24,6 +24,11 @@ object ApplicationConfig {
         System.getenv(env("FRONTEND_DOMAIN")) ?: throw IllegalAccessException("接続を許可するフロントエンドのドメインの環境変数を設定してください。")
     }
 
+    /** 接続を許可するフロントエンドのドメイン (CORS ) */
+    val GOOGLE_P12_LOCATION by lazy {
+        System.getenv(env("GOOGLE_P12_LOCATION")) ?: throw IllegalAccessException("P12の環境変数を設定してください。")
+    }
+
 
     /** MongoデータベースのURL*/
     val DATABASE_URL by lazy {

@@ -46,7 +46,7 @@ object GoogleAPI {
         val credential = GoogleCredential.Builder().setTransport(httpTransport)
             .setJsonFactory(jsonFactory)
             .setServiceAccountId("sheet-request@mojingo-v2-prod.iam.gserviceaccount.com")
-            .setServiceAccountPrivateKeyFromP12File(File("./mojingo-v2-prod-89e7acfc8f8d.p12"))
+            .setServiceAccountPrivateKeyFromP12File(File(ApplicationConfig.GOOGLE_P12_LOCATION))
             .setServiceAccountScopes(arrayListOf(SheetsScopes.SPREADSHEETS_READONLY))
             .build()
         Sheets.Builder(httpTransport, jsonFactory, credential).setApplicationName("Mojingo").build()
