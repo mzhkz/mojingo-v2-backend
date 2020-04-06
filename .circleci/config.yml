@@ -25,7 +25,7 @@ jobs:
           key: v1-dependencies-{{ .Branch }}-{{ checksum "build.gradle.kts" }}
       - run:
           name: Build and Generate JAR
-          command: gradle shdowJar
+          command: gradle shadowJar
       # 設定した秘密鍵のFingerPrintを追記する
       - add_ssh_keys:
           fingerprints:
