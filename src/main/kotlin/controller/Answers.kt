@@ -20,7 +20,7 @@ import java.util.*
 object Answers {
 
     private val answers = mutableListOf<Answer>()
-    private lateinit var session: MongoCollection<Answer.Model>
+    lateinit var session: MongoCollection<Answer.Model>
 
     fun answers() = answers.toMutableList()
 

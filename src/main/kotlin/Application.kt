@@ -47,6 +47,8 @@ fun Application.module(testing: Boolean = false) {
     Answers.initialize() //回答データ読み込み
     Reviews.initialize() //復習テストを読み込み
 
+    InheritExecuter.json()
+
     install(Locations)
 
     install(Compression)
