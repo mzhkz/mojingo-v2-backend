@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "me.mojingo.v2.backend"
-version = "0.1.1"
+version = "2"
 
 application {
     mainClassName = "io.ktor.server.netty.EngineMain"
@@ -50,7 +50,7 @@ tasks.withType<KotlinCompile> {
 
 tasks {
     named<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowJar") {
-        archiveBaseName.set("mojingov2_backend_app")
+        archiveBaseName.set("mojingov2-backend-app")
         mergeServiceFiles()
         manifest {
             attributes(mapOf("Main-Class" to "io.ktor.server.netty.EngineMain"))
