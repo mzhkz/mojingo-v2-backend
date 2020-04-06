@@ -252,6 +252,8 @@ fun Route.category() {
         val target = Categories.categories().find { category -> category.id == categoryId }
             ?: throw BadRequestException("Not correct category_id")
 
+        Categories.deleteCategory(category = target)
+
         context.respond(ResponseInfo(message = "has been succeed"))
 
     }
