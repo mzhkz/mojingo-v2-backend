@@ -1,10 +1,10 @@
-package com.aopro.wordlink.database.model
+package me.mojingo.v2.backend.database.model
 
-import com.aopro.wordlink.controller.Answers
-import com.aopro.wordlink.controller.Categories
-import com.aopro.wordlink.controller.Words
-import com.aopro.wordlink.utilities.CurrentUnixTime
-import com.aopro.wordlink.utilities.randomBytes
+import me.mojingo.v2.backend.controller.Answers
+import me.mojingo.v2.backend.controller.Categories
+import me.mojingo.v2.backend.controller.Words
+import me.mojingo.v2.backend.utilities.CurrentUnixTime
+import me.mojingo.v2.backend.utilities.randomBytes
 import com.google.gson.annotations.Expose
 import org.apache.commons.codec.digest.DigestUtils
 import java.util.*

@@ -1,7 +1,7 @@
-package com.aopro.wordlink.database.model
+package me.mojingo.v2.backend.database.model
 
-import com.aopro.wordlink.controller.Users
-import com.aopro.wordlink.utilities.randomBytes
+import me.mojingo.v2.backend.controller.Users
+import me.mojingo.v2.backend.utilities.randomBytes
 import com.google.gson.annotations.Expose
 import org.apache.commons.codec.digest.DigestUtils
 import java.util.*

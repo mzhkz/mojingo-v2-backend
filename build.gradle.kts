@@ -7,7 +7,7 @@ plugins {
     application
 }
 
-group = "com.aopro"
+group = "me.mojingo.v2.backend"
 version = "0.1.1"
 
 application {

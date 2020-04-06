@@ -1,12 +1,12 @@
-package com.aopro.wordlink.controller
+package me.mojingo.v2.backend.controller
 
-import com.aopro.wordlink.BadRequestException
-import com.aopro.wordlink.ResponseInfo
-import com.aopro.wordlink.database.DatabaseHandler
-import com.aopro.wordlink.database.model.Category
-import com.aopro.wordlink.database.model.Word
-import com.aopro.wordlink.requireNotNullAndNotEmpty
-import com.aopro.wordlink.utilities.*
+import me.mojingo.v2.backend.BadRequestException
+import me.mojingo.v2.backend.ResponseInfo
+import me.mojingo.v2.backend.database.DatabaseHandler
+import me.mojingo.v2.backend.database.model.Category
+import me.mojingo.v2.backend.database.model.Word
+import me.mojingo.v2.backend.requireNotNullAndNotEmpty
+import me.mojingo.v2.backend.utilities.*
 import com.google.gson.annotations.Expose
 import com.mongodb.client.MongoCollection
 import io.ktor.locations.Location

@@ -1,6 +1,6 @@
-package com.aopro.wordlink.database
+package me.mojingo.v2.backend.database
 
-import com.aopro.wordlink.ApplicationConfig
+import me.mojingo.v2.backend.ApplicationConfig
 import com.mongodb.MongoClient
 import com.mongodb.MongoClientURI
 import com.mongodb.MongoCredential

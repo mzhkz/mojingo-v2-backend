@@ -1,9 +1,9 @@
-package com.aopro.wordlink.controller
+package me.mojingo.v2.backend.controller
 
-import com.aopro.wordlink.*
-import com.aopro.wordlink.database.model.User
-import com.aopro.wordlink.utilities.DefaultZone
-import com.aopro.wordlink.utilities.fromBase64
+import me.mojingo.v2.backend.*
+import me.mojingo.v2.backend.database.model.User
+import me.mojingo.v2.backend.utilities.DefaultZone
+import me.mojingo.v2.backend.utilities.fromBase64
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.google.gson.annotations.Expose

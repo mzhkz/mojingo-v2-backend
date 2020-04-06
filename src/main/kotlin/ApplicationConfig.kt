@@ -1,8 +1,8 @@
-package com.aopro.wordlink
+package me.mojingo.v2.backend
 
 object ApplicationConfig {
 
-    private const val ENV_PREFIX = "WORDLINK"
+    private const val ENV_PREFIX = "MOJINGOV2"
 
     /** 環境変数名を取得*/
     val env: (String) -> String = { value ->

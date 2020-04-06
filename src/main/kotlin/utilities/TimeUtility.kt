@@ -1,4 +1,4 @@
-package com.aopro.wordlink.utilities
+package me.mojingo.v2.backend.utilities
 
 import java.text.SimpleDateFormat
 import java.time.ZoneId

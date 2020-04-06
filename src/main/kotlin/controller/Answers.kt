@@ -1,13 +1,13 @@
-package com.aopro.wordlink.controller
+package me.mojingo.v2.backend.controller
 
-import com.aopro.wordlink.database.DatabaseHandler
-import com.aopro.wordlink.database.model.Answer
-import com.aopro.wordlink.database.model.Review
-import com.aopro.wordlink.database.model.User
-import com.aopro.wordlink.database.model.Word
-import com.aopro.wordlink.utilities.CurrentUnixTime
-import com.aopro.wordlink.utilities.DefaultZone
-import com.aopro.wordlink.utilities.ensureIdElemments
+import me.mojingo.v2.backend.database.DatabaseHandler
+import me.mojingo.v2.backend.database.model.Answer
+import me.mojingo.v2.backend.database.model.Review
+import me.mojingo.v2.backend.database.model.User
+import me.mojingo.v2.backend.database.model.Word
+import me.mojingo.v2.backend.utilities.CurrentUnixTime
+import me.mojingo.v2.backend.utilities.DefaultZone
+import me.mojingo.v2.backend.utilities.ensureIdElemments
 import com.mongodb.client.MongoCollection
 import io.ktor.routing.Route
 import org.litote.kmongo.eq

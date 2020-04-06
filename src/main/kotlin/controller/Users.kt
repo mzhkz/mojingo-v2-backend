@@ -1,11 +1,11 @@
-package com.aopro.wordlink.controller
+package me.mojingo.v2.backend.controller
 
-import com.aopro.wordlink.*
-import com.aopro.wordlink.database.DatabaseHandler
-import com.aopro.wordlink.database.model.User
-import com.aopro.wordlink.utilities.CurrentUnixTime
-import com.aopro.wordlink.utilities.currentUnixTimediff
-import com.aopro.wordlink.utilities.splitAsPagination
+import me.mojingo.v2.backend.*
+import me.mojingo.v2.backend.database.DatabaseHandler
+import me.mojingo.v2.backend.database.model.User
+import me.mojingo.v2.backend.utilities.CurrentUnixTime
+import me.mojingo.v2.backend.utilities.currentUnixTimediff
+import me.mojingo.v2.backend.utilities.splitAsPagination
 import com.google.gson.annotations.Expose
 import com.mongodb.client.MongoCollection
 import io.ktor.locations.Location
@@ -45,8 +45,6 @@ object Users {
                 updatedAt = model.updated_at
             )
         })
-
-        println("${ApplicationConfig.ALLOW_ROOT} ADD: ${ApplicationConfig.ROOT_PASSWORD}")
 
         if (ApplicationConfig.ALLOW_ROOT) {
 

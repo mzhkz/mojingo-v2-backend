@@ -1,4 +1,4 @@
-package com.aopro.wordlink.utilities
+package me.mojingo.v2.backend.utilities
 
 import org.apache.commons.codec.digest.DigestUtils
 import java.net.URI

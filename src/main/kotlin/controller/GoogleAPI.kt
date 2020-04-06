@@ -1,6 +1,6 @@
-package com.aopro.wordlink.controller
+package me.mojingo.v2.backend.controller
 
-import com.aopro.wordlink.ApplicationConfig
+import me.mojingo.v2.backend.ApplicationConfig
 import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp
 import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow

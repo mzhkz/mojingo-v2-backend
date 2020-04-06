@@ -1,7 +1,7 @@
-package com.aopro.wordlink
+package me.mojingo.v2.backend
 
-import com.aopro.wordlink.controller.*
-import com.aopro.wordlink.database.DatabaseHandler
+import me.mojingo.v2.backend.controller.*
+import me.mojingo.v2.backend.database.DatabaseHandler
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonSyntaxException

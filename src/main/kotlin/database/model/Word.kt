@@ -1,4 +1,4 @@
-package com.aopro.wordlink.database.model
+package me.mojingo.v2.backend.database.model
 
 import com.google.gson.annotations.Expose
 
