@@ -7,7 +7,7 @@ jobs:
     environment:
       BUILD_APP: build/libs/mojingov2_backend_app-0.1.1.jar # 成果物
       HOST_NAME: 104.199.186.211 # デプロイ先のホスト名
-       USER_NAME: mojingo_app  # デプロイ先のユーザー名
+      USER_NAME: mojingo_app  # デプロイ先のユーザー名
       APP_DIR: /opt/mojingov2/backend/ #デプロイ先のディレクトリ
       SERVICE_NAME: mojingov2-backend
     steps:
