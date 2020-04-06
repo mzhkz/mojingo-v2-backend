@@ -3,7 +3,6 @@ package com.aopro.wordlink.database.model
 import com.aopro.wordlink.utilities.randomBytes
 import com.google.gson.annotations.Expose
 import org.apache.commons.codec.digest.DigestUtils
-import java.util.*
 
 class Answer(
     @Expose val id: String,
@@ -31,8 +30,7 @@ class Answer(
     data class Model(
         val _id: String = "",
         val userId: String = "",
-        val word_name: String = "",
-        val category_id: String = "",
+        val word_id: String = "",
         val rank: Int = 0,
         val created_at: Long = 0L,
         val updated_at: Long = 0L,

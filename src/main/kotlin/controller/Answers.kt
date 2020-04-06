@@ -29,7 +29,7 @@ object Answers {
         Answer(
             id = model._id,
             user = Users.users().find { user -> user.id == model.userId } ?: User.notExistObject(),
-            word = Words.words().find { word -> word.category.id == model.category_id && word.name == model.word_name } ?: Word.notExistObject(),
+            word = Words.words().find { word -> word.id == model.word_id } ?: Word.notExistObject(),
             rank = model.rank,
             createdAt = model.created_at,
             updatedAt = model.updated_at,
@@ -69,9 +69,8 @@ object Answers {
         session.insertOne(Answer.Model(
             _id = answer.id,
             userId = answer.user.id,
-            word_name = answer.word.name,
+            word_id = answer.word.id,
             rank = answer.rank,
-            category_id = answer.word.category.id,
             created_at = answer.createdAt,
             updated_at = answer.updatedAt,
             histories = answer.histories.map { history ->
@@ -92,8 +91,7 @@ object Answers {
                Answer.Model::_id eq answer.id,
                Answer.Model::userId setTo  answer.user.id,
                Answer.Model::rank setTo answer.rank,
-               Answer.Model::word_name setTo  answer.word.name,
-               Answer.Model::category_id setTo  answer.word.category.id,
+               Answer.Model::word_id setTo  answer.word.id,
                Answer.Model::histories setTo answer.histories.map {history ->
                    Answer.History.Model(
                        impact_review = history.impactReviewId,
