@@ -267,7 +267,7 @@ fun Route.category() {
         val target = Categories.categories().find { category -> category.id == categoryId }
             ?:throw BadRequestException("Not correct category_id")
 
-        val words = Words.words().filter { word -> word.category.id == target.id && word.name.indexOf(keyword) != -1 }
+        val words = Words.words().filter { word -> word.category.id == target.id && word.name.indexOf(keyword) != -1 }.sortedBy { word -> word.number }
 
         context.respond(ResponseInfo(data = CategoryRoute.View.Words.CategoryWordsResponse(
             body = words.splitAsPagination(page = page, index = 25).toMutableList(),

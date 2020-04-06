@@ -13,6 +13,7 @@ import com.mongodb.client.MongoCollection
 import io.ktor.locations.Location
 import io.ktor.locations.get
 import io.ktor.response.respond
+import io.ktor.response.respondFile
 import io.ktor.routing.Route
 import io.ktor.routing.get
 import io.ktor.util.caseInsensitiveMap
@@ -76,28 +77,26 @@ object Words {
 
     /** Google Text-To-Speech-APIを使用して発音のMP3ファイルを生成する*/
     fun getSpeechMP3(word: Word, language: Language): File {
-        val fileName = "${word.name}-${language.code}-speech.mp3"
+        val fileName = "${(word.category.id + "||" + word.name).toBase64()}-speech.mp3"
         val cache = File("./temperature/$fileName")
         if (cache.exists()) //音声キャッシュが存在した場合はキャッシュを返す
             return cache
         else {
             val textToSpeechClient = TextToSpeechClient.create()
-            runBlocking(Dispatchers.IO) {
-                val audioContent = textToSpeechClient.synthesizeSpeech(
-                    SynthesisInput.newBuilder()
-                        .setText(word.name)
-                        .build(),
-                    VoiceSelectionParams.newBuilder()
-                        .setLanguageCode(language.code)
-                        .setSsmlGender(SsmlVoiceGender.MALE)
-                        .build(),
-                    AudioConfig.newBuilder()
-                        .setAudioEncoding(AudioEncoding.MP3)
-                        .build()
-                ).audioContent
-                cache.createNewFile() //ファイル生成
-                cache.outputStream().write(audioContent.toByteArray())
-            }
+            val audioContent = textToSpeechClient.synthesizeSpeech(
+                SynthesisInput.newBuilder()
+                    .setText(word.name)
+                    .build(),
+                VoiceSelectionParams.newBuilder()
+                    .setLanguageCode(language.code)
+                    .setSsmlGender(SsmlVoiceGender.MALE)
+                    .build(),
+                AudioConfig.newBuilder()
+                    .setAudioEncoding(AudioEncoding.MP3)
+                    .build()
+            ).audioContent
+            cache.createNewFile() //ファイル生成
+            cache.outputStream().write(audioContent.toByteArray())
             return cache
         }
     }
@@ -106,7 +105,11 @@ object Words {
 
 enum class Language(val code: String) {
     Japanese("ja-JP"),
-    English("en-US"),
+    English("en-US");
+
+    companion object {
+        fun languageCode(code: String) = Language.values().find { it.code == code } ?: English
+     }
 }
 
 @Location("/words")
@@ -132,22 +135,22 @@ class WordRoute {
                 @Expose val means: String = ""
             )
         }
-
-        @Location("pronounce")
-        class Pronounce
     }
+
+    @Location("{wordId}/pronounce")
+    data class Pronounce(val wordId: String = "")
 }
 
 fun Route.word() {
 
 
-    get<WordRoute.View> { query ->
-        context.request.tokenAuthentication()
-        val target = Words.words().find { word -> query.name == word.name && query.category == word.category.id }
-            ?: throw BadRequestException("Not found '${query.category}/${query.name}' as word.")
-
-        context.respond(ResponseInfo(data = target))
-    }
+//    get<WordRoute.View> { query ->
+//        context.request.tokenAuthentication()
+//        val target = Words.words().find { word -> query.name == word.name && query.category == word.category.id }
+//            ?: throw BadRequestException("Not found '${query.category}/${query.name}' as word.")
+//
+//        context.respond(ResponseInfo(data = target))
+//    }
 
 
     get<WordRoute.Search> {
@@ -171,16 +174,16 @@ fun Route.word() {
         )
     }
 
-    get<WordRoute.View.Pronounce> {
+    get<WordRoute.Pronounce> { query ->
         context.request.tokenAuthentication()
-        val name = context.parameters["name"]
-        val category = context.parameters["category"]
+        val pair = query.wordId.fromBase64().split("||")
+
         val language = context.request.queryParameters["language"] ?: "en-US"
 
-        val target = Words.words().find { word -> name == word.name && category == word.category.id }
-            ?: throw BadRequestException("Not found '$category/$name' as word.")
+        val target = Words.words().find { word -> pair[1] == word.name && pair[0] == word.category.id }
+            ?: throw BadRequestException("Not found '${pair[0]}:${pair[1]}' as word.")
 
-        context.respond(Words.getSpeechMP3(target, Language.valueOf(language)))
+        context.respondFile(Words.getSpeechMP3(target, Language.languageCode(language)))
     }
 
 }

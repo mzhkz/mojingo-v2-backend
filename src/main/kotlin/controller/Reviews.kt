@@ -52,7 +52,6 @@ object Reviews {
             entries = model.entries
                 .map { ent ->
                     val pair = ent.fromBase64().split("||")
-                    println(pair)
                     Words.words().find { word -> word.name == pair[1] && word.category.id == pair[0] } ?: Word.notExistObject() }
                 .toMutableList(),
             answers = model.answers
@@ -167,6 +166,7 @@ class ReviewRoute {
                     @Expose val id: String = "",
                     @Expose val name: String = "",
                     @Expose val mean: String = "",
+                    @Expose val categoryId: String = "",
                     @Expose val wordId: String = "",
                     @Expose val owner: User? = User.notExistObject(),
                     @Expose val representCorrect: String = "",
@@ -358,6 +358,7 @@ fun Route.reviews() {
                 data = ReviewRoute.List.View.Let.Question(
                     id = marker.id,
                     wordId = "${next.category.id}||${next.name}".toBase64(),
+                    categoryId = next.category.id,
                     name = next.name,
                     mean = next.mean,
                     owner = target.owner,
@@ -430,6 +431,7 @@ fun Route.reviews() {
                         wordId = "${next.category.id}||${next.name}".toBase64(),
                         name = next.name,
                         mean = next.mean,
+                        categoryId = next.category.id,
                         owner = null,
                         representCorrect = marker.correctsCheck,
                         representIncorrect = marker.incorrectCheck,
