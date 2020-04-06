@@ -3,17 +3,17 @@ package com.aopro.wordlink.controller
 import com.aopro.wordlink.BadRequestException
 import com.aopro.wordlink.ResponseInfo
 import com.aopro.wordlink.database.DatabaseHandler
-import com.aopro.wordlink.database.model.Answer
-import com.aopro.wordlink.database.model.Category
-import com.aopro.wordlink.database.model.User
-import com.aopro.wordlink.database.model.Word
+import com.aopro.wordlink.database.model.*
 import com.aopro.wordlink.requireNotNullAndNotEmpty
 import com.aopro.wordlink.utilities.*
 import com.google.cloud.texttospeech.v1.*
 import com.google.gson.annotations.Expose
+import com.google.rpc.BadRequest
 import com.mongodb.client.MongoCollection
 import io.ktor.locations.Location
 import io.ktor.locations.get
+import io.ktor.locations.post
+import io.ktor.request.receive
 import io.ktor.response.respond
 import io.ktor.response.respondFile
 import io.ktor.routing.Route
@@ -118,6 +118,17 @@ enum class Language(val code: String) {
 @Location("/words")
 class WordRoute {
 
+    @Location("/recommended")
+    class Recommended {
+        data class RecommendedResponse(
+            @Expose val category: Category,
+            @Expose val entriesSize: Int,
+            @Expose val reviewSize: Int
+        )
+
+        data class Payload(val categoryId: String = "")
+    }
+
     @Location("/search")
     class Search {
         data class SearchWordsResponse(
@@ -154,6 +165,50 @@ fun Route.word() {
 //
 //        context.respond(ResponseInfo(data = target))
 //    }
+
+    get<WordRoute.Recommended> {
+        val target = context.request.tokenAuthentication()
+        target.refreshRecommended() //Refresh
+
+        context.respond(ResponseInfo(
+            data = target.cacheRecommended.mapNotNull { recommended ->
+                if (recommended.entries.size != 0) {
+                    WordRoute.Recommended.RecommendedResponse(
+                        category = recommended.category,
+                        entriesSize = recommended.entries.size,
+                        reviewSize = recommended.entries.splitAsPagination(1, 100).size
+                    )
+                } else null
+            })
+        )
+    }
+
+    post<WordRoute.Recommended> {
+        val targetUser = context.request.tokenAuthentication()
+        val payload = context.receive(WordRoute.Recommended.Payload::class)
+        val target = targetUser.cacheRecommended.find { recommended -> recommended.category.id == payload.categoryId }
+            ?: throw BadRequestException("Not fount ${payload.categoryId} as Category")
+        val candidate = target.entries
+
+        val entries = candidate.shuffled().splitAsPagination(1, 100)
+
+        val review = Review(
+            id = Reviews.generateNoDuplicationId(),
+            name = "リマインダーテスト ${target.category.name} ${entries.size}問",
+            description = "",
+            owner = targetUser,
+            entries = entries.toMutableList(),
+            answers = mutableListOf(),
+            finished = false,
+            createdAt = CurrentUnixTime,
+            updatedAt = CurrentUnixTime
+        )
+
+        Reviews.insertReview(review) //DBに追加
+        context.respond(ResponseInfo(
+            data = review
+        ))
+    }
 
 
     get<WordRoute.Search> {

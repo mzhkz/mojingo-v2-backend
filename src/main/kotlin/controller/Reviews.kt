@@ -409,6 +409,7 @@ fun Route.reviews() {
         if (Answers.isExamWordWithAnswer(answer)) { //ランク変動の時期だった場合
             answer.rank = answer.rank + if (isCorrect) 1 else -1 //正解の場合は+1, 間違えた場合は-1
         }
+        target.owner.refreshLastAnswered(targetWord.category, answer)
 
         Reviews.updateReview(target)
         Answers.updateAnswer(answer)

@@ -51,6 +51,7 @@ fun Route.authentication() {
             throw BadRequestException("このアカウントは現在メンテナンス中のため、ログインできません。")
 
         if (isSamePassword(payload.base64Password, target.encryptedPassword)) {
+            target.refreshRecommended()
             context.respond(ResponseInfo(data = target, message = generateAuthenticationToken(target)))
         } else throw BadRequestException("ユーザーネーム、またはパスワードが間違っています。")
     }

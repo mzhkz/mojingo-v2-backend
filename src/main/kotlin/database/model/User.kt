@@ -1,6 +1,7 @@
 package com.aopro.wordlink.database.model
 
 import com.aopro.wordlink.controller.Answers
+import com.aopro.wordlink.controller.Categories
 import com.aopro.wordlink.controller.Words
 import com.aopro.wordlink.utilities.CurrentUnixTime
 import com.aopro.wordlink.utilities.randomBytes
@@ -16,7 +17,7 @@ class User(@Expose val id: String,
            @Expose var accessLevel: Int = 0,
            @Expose val createdAt: Long,
            @Expose var updatedAt: Long,
-           private var cacheRecommended: MutableList<Word> = mutableListOf(),
+           var cacheRecommended: MutableList<Recommended> = mutableListOf(),
            private var cacheRecommendedRefreshDate: Long = 0) {
 
     companion object {
@@ -35,16 +36,31 @@ class User(@Expose val id: String,
     }
 
     /** キャッシュデータを再取得*/
-    fun User.refreshRecommended() {
-        cacheRecommended = Answers.pickupRecommended(this).toMutableList()
-        cacheRecommendedRefreshDate = CurrentUnixTime
+    fun refreshRecommended() {
+       if (CurrentUnixTime - cacheRecommendedRefreshDate > 60 * 30) { //30 min delay
+           val recommended = Answers.pickupRecommended(this).toMutableList()
+
+           cacheRecommended = Categories.categories().map { category ->
+               Recommended(
+                   category,
+                   recommended.filter { word -> word.category.id == category.id }.toMutableList()
+               )
+           }.toMutableList()
+           cacheRecommendedRefreshDate = CurrentUnixTime
+       }
     }
 
     /** 回答記録からキャッシュデータを更新*/
-    fun User.refreshLastAnswered(answer: Answer) {
-        cacheRecommended.removeIf { it.name == answer.word.name } //回答済みの単語を削除する
-        cacheRecommendedRefreshDate = CurrentUnixTime
+    fun refreshLastAnswered(category: Category, answer: Answer) {
+        cacheRecommended.find { it.category.id == category.id }
+            ?.entries?.removeIf { it.id == answer.word.id }//回答済みの単語を削除する
     }
+
+
+    data class Recommended(
+        val category: Category,
+        val entries: MutableList<Word>
+    )
 
     data class Model(
         val _id: String = "",
