@@ -15,12 +15,12 @@
             <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
         </encoder>
     </appender>
-    <root level="INFO">
+    <root level="DEBUG">
         <appender-ref ref="STDOUT"/>
         <appender-ref ref="FILE"/>
     </root>
-    <logger name="org.eclipse.jetty" level="INFO"/>
-    <logger name="io.netty" level="INFO"/>
-    <logger name="me.mojingo" level="INFO"/>
+    <logger name="org.eclipse.jetty" level="DEBUG"/>
+    <logger name="io.netty" level="DEBUG"/>
+    <logger name="me.mojingo" level="DEBUG"/>
     <logger name="ERROR" level="ERROR"/>
 </configuration>
