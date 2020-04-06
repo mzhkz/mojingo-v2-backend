@@ -50,7 +50,7 @@ tasks.withType<KotlinCompile> {
 
 tasks {
     named<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowJar") {
-        archiveBaseName.set("wordlink-application")
+        archiveBaseName.set("mojingov2_backend_app")
         mergeServiceFiles()
         manifest {
             attributes(mapOf("Main-Class" to "io.ktor.server.netty.EngineMain"))
