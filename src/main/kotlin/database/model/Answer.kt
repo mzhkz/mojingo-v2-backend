@@ -9,6 +9,7 @@ class Answer(
     @Expose val id: String,
     @Expose val user: User,
     @Expose val word: Word,
+    @Expose var rank: Int,
     @Expose val createdAt: Long,
     @Expose val updatedAt: Long,
     @Expose val histories: MutableList<History>) {
@@ -20,6 +21,7 @@ class Answer(
                 id = "not_exist_${DigestUtils.shaHex(randomBytes()).substring(0,7)}",
                 user = User.notExistObject(),
                 word = Word.notExistObject(),
+                rank = 0,
                 createdAt = 0L,
                 updatedAt = 0L,
                 histories = mutableListOf()
@@ -31,6 +33,7 @@ class Answer(
         val userId: String = "",
         val word_name: String = "",
         val category_id: String = "",
+        val rank: Int = 0,
         val created_at: Long = 0L,
         val updated_at: Long = 0L,
         val histories: MutableList<History.Model> = mutableListOf()

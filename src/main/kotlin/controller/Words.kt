@@ -3,7 +3,9 @@ package com.aopro.wordlink.controller
 import com.aopro.wordlink.BadRequestException
 import com.aopro.wordlink.ResponseInfo
 import com.aopro.wordlink.database.DatabaseHandler
+import com.aopro.wordlink.database.model.Answer
 import com.aopro.wordlink.database.model.Category
+import com.aopro.wordlink.database.model.User
 import com.aopro.wordlink.database.model.Word
 import com.aopro.wordlink.requireNotNullAndNotEmpty
 import com.aopro.wordlink.utilities.*
@@ -40,7 +42,8 @@ object Words {
         val readResult = GoogleAPI.setUpSheet.Spreadsheets().values().get(target.spreadSheetId, "A1:D").execute()
         val entries = readResult.getValues().mapIndexed { index, line ->
             Word(
-                number  = index+1,
+                id = "${target.id}||${line[0] as String}".toBase64(),
+                number = index+1,
                 name = line[0] as String,
                 mean = line[1] as String,
                 description = if (line.size > 2) line[2] as String else "",

@@ -3,6 +3,7 @@ package com.aopro.wordlink.database.model
 import com.google.gson.annotations.Expose
 
 class Word(
+    @Expose var id: String,
     @Expose var number: Int,
     @Expose var name: String,
     @Expose var mean: String,
@@ -13,6 +14,7 @@ class Word(
         @JvmStatic
         fun notExistObject() =
             Word(
+                id = "",
                 number = -1, //number of category
                 name = "-- 存在しない単語 --",
                 mean = "",
@@ -20,11 +22,4 @@ class Word(
                 description = ""
             )
     }
-
-    data class Model(
-        val name: String = "",
-        val mean: String = "",
-        val description: String = "",
-        val category_id: String = ""
-    )
 }

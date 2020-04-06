@@ -24,19 +24,13 @@ object Answers {
 
     fun answers() = answers.toMutableList()
 
-    /** Sheetを更新する */
-    fun replace(user: User) {
-        answers.removeAll { answer -> answer.user == user }
-        answers.addAll( session.find(Answer.Model::userId eq user.id).map { model->
-            adapt(model)
-        })
-    }
 
     private fun adapt(model: Answer.Model) =
         Answer(
             id = model._id,
             user = Users.users().find { user -> user.id == model.userId } ?: User.notExistObject(),
             word = Words.words().find { word -> word.category.id == model.category_id && word.name == model.word_name } ?: Word.notExistObject(),
+            rank = model.rank,
             createdAt = model.created_at,
             updatedAt = model.updated_at,
             histories = model.histories
@@ -76,6 +70,7 @@ object Answers {
             _id = answer.id,
             userId = answer.user.id,
             word_name = answer.word.name,
+            rank = answer.rank,
             category_id = answer.word.category.id,
             created_at = answer.createdAt,
             updated_at = answer.updatedAt,
@@ -96,6 +91,7 @@ object Answers {
            session.updateOne(
                Answer.Model::_id eq answer.id,
                Answer.Model::userId setTo  answer.user.id,
+               Answer.Model::rank setTo answer.rank,
                Answer.Model::word_name setTo  answer.word.name,
                Answer.Model::category_id setTo  answer.word.category.id,
                Answer.Model::histories setTo answer.histories.map {history ->
@@ -109,6 +105,48 @@ object Answers {
            )
        }
     }
+
+    /** 今日、確認、出題する問題 */
+    fun pickupRecommended(user: User): List<Word> {
+        return Answers.answers().mapNotNull { answer ->
+            if (answer.histories.isNotEmpty() && isExamWordWithAnswer(answer)) {
+                answer.word
+            } else {
+                null
+            }
+        }
+    }
+
+
+    /**
+     * 追加前にランク変動かどうか検証する
+     */
+    fun isExamWordWithAnswer(target: Answer): Boolean {
+        val lately = target.histories.map { history ->  history.postAt }.max() ?: 0L
+        val diff = CurrentUnixTime - lately //差分を出す
+        return diff >= getDelay(target.rank)
+    }
+
+    /** 最後に問題を解いた日から何日後に出題するか */
+    private fun getDelay(rank: Int): Long {
+        val hour: Long = 60 * 60
+        val day: Long = 60 * 60 * 24 //1日
+        val week: Long = day * 7 //7日
+        val month: Long = day * 30 //30日
+
+        return when (rank) {
+            0 -> hour * 20 //1日
+            1 -> hour * 20 //2日後
+            2 -> day * 3 //4日後
+            3 -> day * 6 //1週間後
+            4 -> week //11日後
+            5 -> week + day * 3 //2週間後
+            6 -> week * 2 //3週間後
+            7 -> week * 3 //1か月後
+            8 -> month
+            else -> month * 2 //3カ月後
+        }
+    }
 }
 
 fun User.getAnswer(word: Word): Answer {
@@ -120,6 +158,7 @@ fun User.getAnswer(word: Word): Answer {
             id = Answers.generateNoDuplicationId(),
             user = this,
             word = word,
+            rank = 0,
             createdAt = CurrentUnixTime,
             updatedAt = CurrentUnixTime,
             histories = mutableListOf()
