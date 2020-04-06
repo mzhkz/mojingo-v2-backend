@@ -39,14 +39,14 @@ object Words {
     /** Spreadsheetと同期 */
     fun asyncBySheet(target: Category) {
         val presenceCheck = mutableListOf<String>()
-        val readResult = GoogleAPI.setUpSheet.Spreadsheets().values().get(target.spreadSheetId, "A1:D").execute()
+        val readResult = GoogleAPI.setUpSheet.Spreadsheets().values().get(target.spreadSheetId, "A1:C").execute()
         val entries = readResult.getValues().mapIndexed { index, line ->
             Word(
-                id = "${target.id}||${line[0] as String}".toBase64(),
+                id = "${target.id}||${line[0]}".toBase64(),
                 number = index+1,
-                name = line[0] as String,
-                mean = line[1] as String,
-                description = if (line.size > 2) line[2] as String else "",
+                name = "${line[0]}",
+                mean = "${line[1]}",
+                description = if (line.size > 2) "${line[2]}" else "",
                 category = target
             )
         }

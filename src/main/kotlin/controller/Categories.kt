@@ -184,7 +184,7 @@ fun Route.category() {
            Words.asyncBySheet(target = instance)
        } catch (e: Exception) {
            e.printStackTrace()
-           throw BadRequestException("sheet-request@mojingo-v2-prod.iam.gserviceaccount.com")
+           throw BadRequestException("エラーが発生しました")
        }
         Categories.insertCategory(instance)
 
@@ -202,7 +202,7 @@ fun Route.category() {
             Words.asyncBySheet(target = target)
         } catch (e: Exception) {
             e.printStackTrace()
-            throw BadRequestException("sheet-request@mojingo-v2-prod.iam.gserviceaccount.com")
+            throw BadRequestException("同期中にエラーが発生ました.")
         }
 
         context.respond(ResponseInfo(message = "has been succeed"))
