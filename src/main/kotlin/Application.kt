@@ -7,8 +7,6 @@ import com.google.gson.GsonBuilder
 import com.google.gson.JsonSyntaxException
 import com.google.gson.annotations.Expose
 import io.ktor.application.Application
-import io.ktor.application.ApplicationCall
-import io.ktor.application.call
 import io.ktor.application.install
 import io.ktor.features.*
 import io.ktor.gson.gson
@@ -98,6 +96,10 @@ fun Application.module(testing: Boolean = false) {
 
 
     routing {
+
+        get {
+            context.respond(ApplicationConfig.FRONTEND_APP_DOMAIN)
+        }
 
         authentication()
         user()

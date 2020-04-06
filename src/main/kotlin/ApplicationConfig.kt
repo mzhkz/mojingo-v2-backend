@@ -16,7 +16,7 @@ object ApplicationConfig {
 
 
     val KTOR_ENV by lazy {
-        System.getenv(env("KTOR_ENV"))?: "dev"
+        System.getenv("KTOR_ENV")?: "dev"
     }
 
     /** 接続を許可するフロントエンドのドメイン (CORS ) */
