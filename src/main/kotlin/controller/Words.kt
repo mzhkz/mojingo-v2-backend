@@ -42,11 +42,11 @@ object Words {
         val readResult = GoogleAPI.setUpSheet.Spreadsheets().values().get(target.spreadSheetId, "A1:C").execute()
         val entries = readResult.getValues().mapIndexed { index, line ->
             Word(
-                id = "${target.id}||${line[0]}".toBase64(),
+                id = "${target.id}||${line.getOrNull(0)}".toBase64(),
                 number = index+1,
-                name = "${line[0]}",
-                mean = "${line[1]}",
-                description = if (line.size > 2) "${line[2]}" else "",
+                name = "${line.getOrNull(0)}",
+                mean = "${line.getOrNull(1)}",
+                description = if (line.size > 2) "${line.getOrNull(2)}" else "",
                 category = target
             )
         }
