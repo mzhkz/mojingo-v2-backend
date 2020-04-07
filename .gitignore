@@ -8,3 +8,7 @@
 *.iws
 
 /view/node_modules
+
+mojingo-v2-prod-89e7acfc8f8d.p12
+/temperature
+/logs

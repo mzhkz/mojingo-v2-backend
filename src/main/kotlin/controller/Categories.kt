@@ -1,11 +1,8 @@
 package me.mojingo.v2.backend.controller
 
-import me.mojingo.v2.backend.BadRequestException
-import me.mojingo.v2.backend.ResponseInfo
 import me.mojingo.v2.backend.database.DatabaseHandler
 import me.mojingo.v2.backend.database.model.Category
 import me.mojingo.v2.backend.database.model.Word
-import me.mojingo.v2.backend.requireNotNullAndNotEmpty
 import me.mojingo.v2.backend.utilities.*
 import com.google.gson.annotations.Expose
 import com.mongodb.client.MongoCollection
@@ -15,6 +12,8 @@ import io.ktor.locations.post
 import io.ktor.request.receive
 import io.ktor.response.respond
 import io.ktor.routing.Route
+import me.mojingo.v2.backend.*
+import me.mojingo.v2.backend.database.model.User
 import org.litote.kmongo.eq
 import org.litote.kmongo.getCollection
 import org.litote.kmongo.setTo
@@ -41,6 +40,8 @@ object Categories {
                     name = model.name,
                     spreadSheetId = model.spread_sheet_id,
                     description = model.description,
+                    owner = Users.users().find { usr -> usr.id == model.owner_id } ?: User.notExistObject(),
+                    shareUsers = model.share_users.mapNotNull { usrId -> Users.users().find { usr -> usr.id == usrId } }.toMutableList(),
                     createdAt = model.created_at,
                     updatedAt = model.updated_at,
                     private = model.private
@@ -57,7 +58,7 @@ object Categories {
             builder += elements.random()
         }
 
-        return if (categories.filter { category -> category.id == builder }.isEmpty()) builder else generateNoDuplicationId()
+        return if (categories.filter { category -> category.id == builder }.isNotEmpty()) builder else generateNoDuplicationId()
     }
 
     /** データベースにデータを追加*/
@@ -67,6 +68,7 @@ object Categories {
             name = category.name,
             spread_sheet_id = category.spreadSheetId,
             description = category.description,
+            owner_id = category.owner.id,
             created_at = category.createdAt,
             updated_at = category.createdAt,
             private = category.private
@@ -112,7 +114,7 @@ class CategoryRoute {
         data class Payload(
             @Expose val name: String = "",
             @Expose val description: String = "",
-            @Expose val private: Boolean = false,
+            @Expose val private: Boolean = true,
             @Expose val sheetId: String = ""
         )
     }
@@ -152,21 +154,21 @@ class CategoryRoute {
 fun Route.category() {
 
     get<CategoryRoute> {
-        val user = context.request.tokenAuthentication()
+        val authUser = context.request.tokenAuthentication()
         val categories = Categories.categories()
-        val response = categories.mapNotNull { c1 ->
-            categories.find { c2 -> c1.id == c2.id }
-        }.reversed().map { c3 ->
+        val response = categories.filter { category -> category.shareUsers.contains(authUser) }.reversed().map { category ->
             CategoryRoute.CategoryResponse(
-                category = c3,
-                wordCount = Words.words().filter { word -> word.category.id == c3.id }.size
+                category = category,
+                wordCount = Words.words().filter { word -> word.category.id == category.id }.size
             )
         }
         context.respond(ResponseInfo(data = response))
     }
 
     post<CategoryRoute.Create> {
-        context.request.tokenAuthentication(2) //管理者レベルからアクセス可能
+        val authUser = context.request.tokenAuthentication()
+        if (authUser.id == ApplicationConfig.SYSTEM_ROOT_NAME) //rootアカウント
+            throw BadRequestException("Rootアカウントで辞書の作成は出来ません.")
 
         val payload = context.receive(CategoryRoute.Create.Payload::class)
         requireNotNullAndNotEmpty(payload.name, payload.sheetId) //Null and Empty Check!
@@ -176,6 +178,8 @@ fun Route.category() {
             name = payload.name,
             spreadSheetId = payload.sheetId,
             description = payload.description,
+            owner = authUser,
+            shareUsers = mutableListOf(authUser), //ownerを追加
             private = payload.private,
             createdAt = CurrentUnixTime,
             updatedAt = CurrentUnixTime
@@ -184,7 +188,7 @@ fun Route.category() {
            Words.asyncBySheet(target = instance)
        } catch (e: Exception) {
            e.printStackTrace()
-           throw BadRequestException("エラーが発生しました")
+           throw BadRequestException("Error occur: ${e.localizedMessage}")
        }
         Categories.insertCategory(instance)
 
@@ -192,17 +196,19 @@ fun Route.category() {
     }
 
     post<CategoryRoute.View.Sync> {
-        context.request.tokenAuthentication(2) //管理者レベルからアクセス可能
+        val authUser = context.request.tokenAuthentication() //管理者レベルからアクセス可能
         val categoryId = context.parameters["id"]
         requireNotNullAndNotEmpty(categoryId) //Null and Empty Check!
 
         val target = Categories.categories().find { category -> category.id == categoryId }
             ?: throw BadRequestException("Not correct category_id")
+        if (!target.shareUsers.contains(authUser))
+            throw AuthorizationException("同期する権限がありません。")
         try {
             Words.asyncBySheet(target = target)
         } catch (e: Exception) {
             e.printStackTrace()
-            throw BadRequestException("同期中にエラーが発生ました. ${e.localizedMessage}")
+            throw BadRequestException("Error occur: ${e.localizedMessage}")
         }
 
         context.respond(ResponseInfo(message = "has been succeed"))
@@ -226,13 +232,17 @@ fun Route.category() {
     }
 
     post<CategoryRoute.View.Update> {
-        context.request.tokenAuthentication(2)
+        val authUser = context.request.tokenAuthentication()
         val categoryId = context.parameters["id"]
         val payload = context.receive(CategoryRoute.View.Update.Payload::class)
         requireNotNullAndNotEmpty(categoryId, payload.name, payload.description) //Null and Empty Check!
 
         val target = Categories.categories().find { category -> category.id == categoryId }
             ?: throw BadRequestException("Not correct category_id")
+        if (!target.shareUsers.contains(authUser))
+            throw AuthorizationException("更新する権限がありません。")
+
+        if (target.private && target.owner.id != authUser.id)
 
        Categories.updateCategory(target.apply {
            name = payload.name
@@ -244,13 +254,15 @@ fun Route.category() {
 
 
     post<CategoryRoute.View.Delete> {
-        context.request.tokenAuthentication(3)
+        val authUser = context.request.tokenAuthentication()
         val categoryId = context.parameters["id"]
         val payload = context.receive(CategoryRoute.View.Delete.Payload::class)
         requireNotNullAndNotEmpty(categoryId, payload.withDepend) //Null and Empty Check!
 
         val target = Categories.categories().find { category -> category.id == categoryId }
             ?: throw BadRequestException("Not correct category_id")
+        if (target.owner.id != authUser.id)
+            throw AuthorizationException("削除する権限がありません。")
 
         Categories.deleteCategory(category = target)
 
@@ -259,7 +271,7 @@ fun Route.category() {
     }
 
     get<CategoryRoute.View.Words> {
-        context.request.tokenAuthentication()
+        val authUser = context.request.tokenAuthentication()
         val categoryId = context.parameters["id"]
         val page = context.request.queryParameters["page"]?.toInt() ?: 1
         val keyword = context.request.queryParameters["keyword"] ?: ""
@@ -268,6 +280,8 @@ fun Route.category() {
 
         val target = Categories.categories().find { category -> category.id == categoryId }
             ?:throw BadRequestException("Not correct category_id")
+        if (!target.shareUsers.contains(authUser))
+            throw AuthorizationException("表示する権限がありません。")
 
         val words = Words.words().filter { word -> word.category.id == target.id && word.name.indexOf(keyword) != -1 }.sortedBy { word -> word.number }
 

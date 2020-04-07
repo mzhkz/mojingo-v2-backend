@@ -16,7 +16,7 @@ class Word(
             Word(
                 id = "",
                 number = -1, //number of category
-                name = "-- 存在しない単語 --",
+                name = "-- この単語は削除されました --",
                 mean = "",
                 category = Category.notExistObject(),
                 description = ""

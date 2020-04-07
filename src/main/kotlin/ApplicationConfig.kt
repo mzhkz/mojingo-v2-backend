@@ -55,4 +55,8 @@ object ApplicationConfig {
     val SESSION_SECRET by lazy {
         System.getenv(env("SESSION_SECRET")) ?: throw IllegalAccessException("セッションシークレットの環境変数を設定してください。")
     }
+
+    const val SYSTEM_ROOT_NAME = "system_root" //ルートユーザーで予約されるユーザ名
+
+    const val REVIEW_OF_RECOMMENDED_MAX_SIZE = 100 //復習テストの最大サイズ数
 }

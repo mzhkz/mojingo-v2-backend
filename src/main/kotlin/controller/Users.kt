@@ -50,10 +50,10 @@ object Users {
 
             //Rootアカウント
             users.add(User(
-                id = "system_root",
+                id = ApplicationConfig.SYSTEM_ROOT_NAME,
                 username = "root",
-                firstName = "System",
-                lastName = "Administrator",
+                firstName = "システム",
+                lastName = "マネジメント",
                 createdAt = CurrentUnixTime,
                 updatedAt = CurrentUnixTime,
                 accessLevel = 3,

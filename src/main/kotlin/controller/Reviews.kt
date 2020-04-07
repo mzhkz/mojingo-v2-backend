@@ -114,6 +114,12 @@ object Reviews {
             Review.Model::updatedAt setTo CurrentUnixTime
         )
     }
+
+
+    fun deleteReview(review: Review) {
+        session.deleteOne(Review.Model::_id eq review.id)
+        reviews.removeIf { rev -> rev.id == review.id }
+    }
 }
 
 object Markers {
@@ -156,6 +162,9 @@ class ReviewRoute {
 
             @Location("/qrcode")
             class QRCode
+
+            @Location("/delete")
+            class Delete
 
             /** CSRF防止の為、回答専用のセッションを設ける */
             @Location("/let")
@@ -312,6 +321,18 @@ fun Route.reviews() {
         ImageIO.write(image, "png",imageFile)
 
         context.respondFile(imageFile)
+    }
+
+    post<ReviewRoute.List.View.Delete> {
+        val authUser = context.request.tokenAuthentication()
+        val reviewId = context.parameters["id"]
+
+        val target = Reviews.reviews().find { review -> review.id == reviewId && authUser.id == review.owner.id}
+            ?: throw AuthorizationException("この操作は、小テスト作成者の本人のみが行なえます。")
+
+        Reviews.deleteReview(target)
+
+        context.respond(ResponseInfo(message = "has been succeed"))
     }
 
 

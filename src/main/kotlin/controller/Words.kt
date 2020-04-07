@@ -21,6 +21,7 @@ import io.ktor.routing.get
 import io.ktor.util.caseInsensitiveMap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
+import me.mojingo.v2.backend.ApplicationConfig
 import org.litote.kmongo.getCollection
 import java.io.File
 
@@ -126,7 +127,7 @@ class WordRoute {
             @Expose val reviewSize: Int
         )
 
-        data class Payload(val categoryId: String = "")
+        data class Payload(@Expose val categoryId: String = "")
     }
 
     @Location("/search")
@@ -176,7 +177,7 @@ fun Route.word() {
                     WordRoute.Recommended.RecommendedResponse(
                         category = recommended.category,
                         entriesSize = recommended.entries.size,
-                        reviewSize = recommended.entries.splitAsPagination(1, 100).size
+                        reviewSize = recommended.entries.maximumAsPagination(ApplicationConfig.REVIEW_OF_RECOMMENDED_MAX_SIZE)
                     )
                 } else null
             })
@@ -194,7 +195,7 @@ fun Route.word() {
 
         val review = Review(
             id = Reviews.generateNoDuplicationId(),
-            name = "リマインダーテスト ${target.category.name} ${entries.size}問",
+            name = "[R] ${target.category.name.toShortDecoration(6)} ${entries.size}問",
             description = "",
             owner = targetUser,
             entries = entries.toMutableList(),
