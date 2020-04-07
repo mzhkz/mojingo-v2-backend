@@ -222,7 +222,8 @@ fun Route.word() {
 
         requireNotNullAndNotEmpty(page) //Null and Empty Check!
 
-        val words = if (keyword.isNotEmpty()) Words.words().filter { word -> word.name.indexOf(keyword) != -1 }
+        val words = if (keyword.isNotEmpty()) Words.words().filter { word -> word.category.shareUsers.contains(authUser) && word.name.indexOf(keyword) != -1 }
+            .sortedBy { word -> word.number }
         else mutableListOf()
 
         context.respond(
@@ -236,7 +237,7 @@ fun Route.word() {
                             "mean" to word.mean,
                             "description" to word.description,
                             "category" to word.category,
-                            "rank" to authUser.getAnswer(word).rank
+                            "rank" to 0
                         )
                     }.toMutableList(),
                     resultSize = words.size,

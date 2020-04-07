@@ -71,15 +71,15 @@ object InheritExecuter {
 
         val filterW = v1Words.filter { it.owner == "109593756084581831456" }
 
-        val file = File("./old-json.excel")
-        file.createNewFile()
-        file.setWritable(true)
+//        val file = File("./old-json.excel")
+//        file.createNewFile()
+//        file.setWritable(true)
 
         println("${filterW.size}個のターゲットが見つかりました")
 
         var body = ""
 
-        val categoryId = Categories.generateNoDuplicationId()
+        val categoryId = "CW4obg9UM"
 
         println("${categoryId}で登録を回診します")
 
@@ -110,7 +110,7 @@ object InheritExecuter {
             }
         }
 
-        file.writeText(body)
+//        file.writeText(body)
 
         println("完了！！")
 
