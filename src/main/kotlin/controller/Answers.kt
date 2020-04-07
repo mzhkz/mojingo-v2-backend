@@ -106,7 +106,7 @@ object Answers {
 
     /** 今日、確認、出題する問題 */
     fun pickupRecommended(user: User): List<Word> {
-        return Answers.answers().mapNotNull { answer ->
+        return Answers.answers().filter { answer -> answer.user.id == user.id }.mapNotNull { answer ->
             if (answer.histories.isNotEmpty() && isExamWordWithAnswer(answer)) {
                 answer.word
             } else {

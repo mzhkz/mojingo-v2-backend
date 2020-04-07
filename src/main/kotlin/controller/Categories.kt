@@ -211,6 +211,7 @@ fun Route.category() {
             throw BadRequestException("Error occur: ${e.localizedMessage}")
         }
 
+
         context.respond(ResponseInfo(message = "has been succeed"))
     }
 

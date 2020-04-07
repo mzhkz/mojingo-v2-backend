@@ -96,9 +96,5 @@ fun ApplicationRequest.tokenAuthentication(accessLevel: Int = 1): User {
     val user = Users.users().find { user -> user.id == id } ?: throw AuthorizationException("トークンが無効です。再読み込みをしてください")
     if (user.accessLevel < accessLevel) throw AuthorizationException("アクセス権限がありません.")
 
-    GlobalScope.launch(Dispatchers.IO) { //非同期で情報をリフレッシュ
-        user.refreshRecommended()
-    }
-
     return user
 }
