@@ -21,6 +21,7 @@ import org.litote.kmongo.updateOne
 import java.lang.Exception
 import java.time.LocalDateTime
 import java.util.*
+import kotlin.collections.HashMap
 
 object Categories {
 
@@ -29,24 +30,26 @@ object Categories {
 
     fun categories() = categories.toMutableList()
 
-        fun initialize() {
-            session = DatabaseHandler
-                .databaseSession
-                .getCollection<Category.Model>("categories")
+    fun initialize() {
+        session = DatabaseHandler
+            .databaseSession
+            .getCollection<Category.Model>("categories")
 
-            categories.addAll(session.find().map{ model ->
-                Category(
-                    id = model._id,
-                    name = model.name,
-                    spreadSheetId = model.spread_sheet_id,
-                    description = model.description,
-                    owner = Users.users().find { usr -> usr.id == model.owner_id } ?: User.notExistObject(),
-                    shareUsers = model.share_users.mapNotNull { usrId -> Users.users().find { usr -> usr.id == usrId } }.toMutableList(),
-                    createdAt = model.created_at,
-                    updatedAt = model.updated_at,
-                    private = model.private
-                )
-            })
+        categories.addAll(session.find().map { model ->
+            Category(
+                id = model._id,
+                name = model.name,
+                spreadSheetId = model.spread_sheet_id,
+                description = model.description,
+                owner = Users.users().find { usr -> usr.id == model.owner_id } ?: User.notExistObject(),
+                shareUsers = model.share_users.mapNotNull { usrId ->
+                    Users.users().find { usr -> usr.id == usrId }
+                }.toMutableList(),
+                createdAt = model.created_at,
+                updatedAt = model.updated_at,
+                private = model.private
+            )
+        })
     }
 
     /** 重複のないIDを生成します。*/
@@ -63,17 +66,19 @@ object Categories {
 
     /** データベースにデータを追加*/
     fun insertCategory(category: Category) {
-        session.insertOne(Category.Model(
-            _id = category.id,
-            name = category.name,
-            spread_sheet_id = category.spreadSheetId,
-            description = category.description,
-            owner_id = category.owner.id,
-            share_users = category.shareUsers.map { usr -> usr.id }.toMutableList(),
-            created_at = category.createdAt,
-            updated_at = category.createdAt,
-            private = category.private
-        ))
+        session.insertOne(
+            Category.Model(
+                _id = category.id,
+                name = category.name,
+                spread_sheet_id = category.spreadSheetId,
+                description = category.description,
+                owner_id = category.owner.id,
+                share_users = category.shareUsers.map { usr -> usr.id }.toMutableList(),
+                created_at = category.createdAt,
+                updated_at = category.createdAt,
+                private = category.private
+            )
+        )
         categories.add(category)
     }
 
@@ -82,15 +87,18 @@ object Categories {
     fun updateCategory(category: Category) {
         session.updateOne(
             Category.Model::_id eq category.id,
-            Category.Model::name setTo  category.name,
-            Category.Model::description setTo  category.description,
+            Category.Model::name setTo category.name,
+            Category.Model::description setTo category.description,
             Category.Model::share_users setTo category.shareUsers.map { usr -> usr.id },
-            Category.Model::private setTo  category.private,
+            Category.Model::private setTo category.private,
             Category.Model::updated_at setTo Date
-                .from(LocalDateTime
-                    .now()
-                    .atZone(DefaultZone)
-                    .toInstant()).time)
+                .from(
+                    LocalDateTime
+                        .now()
+                        .atZone(DefaultZone)
+                        .toInstant()
+                ).time
+        )
     }
 
     /**
@@ -127,7 +135,7 @@ class CategoryRoute {
         @Location("/words")
         class Words {
             data class CategoryWordsResponse(
-                @Expose val body: MutableList<Word> = mutableListOf(),
+                @Expose val body: MutableList<HashMap<String, *>> = mutableListOf(),
                 @Expose val pageSize: Int = 0
             )
         }
@@ -158,12 +166,13 @@ fun Route.category() {
     get<CategoryRoute> {
         val authUser = context.request.tokenAuthentication()
         val categories = Categories.categories()
-        val response = categories.filter { category -> category.shareUsers.contains(authUser) }.reversed().map { category ->
-            CategoryRoute.CategoryResponse(
-                category = category,
-                wordCount = Words.words().filter { word -> word.category.id == category.id }.size
-            )
-        }
+        val response =
+            categories.filter { category -> category.shareUsers.contains(authUser) }.reversed().map { category ->
+                CategoryRoute.CategoryResponse(
+                    category = category,
+                    wordCount = Words.words().filter { word -> word.category.id == category.id }.size
+                )
+            }
         context.respond(ResponseInfo(data = response))
     }
 
@@ -186,12 +195,12 @@ fun Route.category() {
             createdAt = CurrentUnixTime,
             updatedAt = CurrentUnixTime
         )
-       try {
-           Words.asyncBySheet(target = instance)
-       } catch (e: Exception) {
-           e.printStackTrace()
-           throw BadRequestException("Error occur: ${e.localizedMessage}")
-       }
+        try {
+            Words.asyncBySheet(target = instance)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            throw BadRequestException("Error occur: ${e.localizedMessage}")
+        }
         Categories.insertCategory(instance)
 
         context.respond(ResponseInfo(message = "has been succeed"))
@@ -227,10 +236,14 @@ fun Route.category() {
 
         val words = Words.words().filter { word -> word.category.id == target.id }
 
-        context.respond(ResponseInfo(data = CategoryRoute.CategoryResponse(
-            category = target,
-            createdAgo = target.createdAt.currentUnixTimediff()
-        )))
+        context.respond(
+            ResponseInfo(
+                data = CategoryRoute.CategoryResponse(
+                    category = target,
+                    createdAgo = target.createdAt.currentUnixTimediff()
+                )
+            )
+        )
 
     }
 
@@ -247,10 +260,10 @@ fun Route.category() {
 
         if (target.private && target.owner.id != authUser.id)
 
-       Categories.updateCategory(target.apply {
-           name = payload.name
-           description = payload.description
-       })
+            Categories.updateCategory(target.apply {
+                name = payload.name
+                description = payload.description
+            })
 
         context.respond(ResponseInfo(message = "has been succeed"))
     }
@@ -282,14 +295,25 @@ fun Route.category() {
         requireNotNullAndNotEmpty(categoryId, page, keyword) //Null and Empty Check!
 
         val target = Categories.categories().find { category -> category.id == categoryId }
-            ?:throw BadRequestException("Not correct category_id")
+            ?: throw BadRequestException("Not correct category_id")
         if (!target.shareUsers.contains(authUser))
             throw AuthorizationException("表示する権限がありません。")
 
-        val words = Words.words().filter { word -> word.category.id == target.id && word.name.indexOf(keyword) != -1 }.sortedBy { word -> word.number }
+        val words = Words.words().filter { word -> word.category.id == target.id && word.name.indexOf(keyword) != -1 }
+            .sortedBy { word -> word.number }
+
 
         context.respond(ResponseInfo(data = CategoryRoute.View.Words.CategoryWordsResponse(
-            body = words.splitAsPagination(page = page, index = 25).toMutableList(),
+            body = words.splitAsPagination(page = page, index = 25).map { word ->
+                hashMapOf(
+                    "id" to word.id,
+                    "name" to word.name,
+                    "number" to word.number,
+                    "mean" to word.mean,
+                    "description" to word.description,
+                    "rank" to authUser.getAnswer(word).rank
+                )
+            }.toMutableList(),
             pageSize = words.maximumAsPagination(25)
         )))
     }

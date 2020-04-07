@@ -32,9 +32,9 @@ object Words {
     fun words() = words.toMutableList()
 
     fun initialize() {
-         Categories.categories().forEach { category ->
-             asyncBySheet(category)
-         }
+        Categories.categories().forEach { category ->
+            asyncBySheet(category)
+        }
     }
 
     /** Spreadsheetと同期 */
@@ -44,7 +44,7 @@ object Words {
         val entries = readResult.getValues().mapIndexed { index, line ->
             Word(
                 id = "${target.id}||${line.getOrNull(0)}".toBase64(),
-                number = index+1,
+                number = index + 1,
                 name = "${line.getOrNull(0)}",
                 mean = "${line.getOrNull(1)}",
                 description = if (line.size > 2) "${line.getOrNull(2)}" else "",
@@ -113,7 +113,7 @@ enum class Language(val code: String) {
 
     companion object {
         fun languageCode(code: String) = Language.values().find { it.code == code } ?: English
-     }
+    }
 }
 
 @Location("/words")
@@ -133,7 +133,7 @@ class WordRoute {
     @Location("/search")
     class Search {
         data class SearchWordsResponse(
-            @Expose val body: MutableList<Word> = mutableListOf(),
+            @Expose val body: MutableList<HashMap<String, Any>> = mutableListOf(),
             @Expose val resultSize: Int = 0,
             @Expose val pageSize: Int = 0
         )
@@ -171,16 +171,17 @@ fun Route.word() {
         val target = context.request.tokenAuthentication()
         target.refreshRecommended() //Refresh
 
-        context.respond(ResponseInfo(
-            data = target.cacheRecommended.mapNotNull { recommended ->
-                if (recommended.entries.size != 0) {
-                    WordRoute.Recommended.RecommendedResponse(
-                        category = recommended.category,
-                        entriesSize = recommended.entries.size,
-                        reviewSize = recommended.entries.maximumAsPagination(ApplicationConfig.REVIEW_OF_RECOMMENDED_MAX_SIZE)
-                    )
-                } else null
-            })
+        context.respond(
+            ResponseInfo(
+                data = target.cacheRecommended.mapNotNull { recommended ->
+                    if (recommended.entries.size != 0) {
+                        WordRoute.Recommended.RecommendedResponse(
+                            category = recommended.category,
+                            entriesSize = recommended.entries.size,
+                            reviewSize = recommended.entries.maximumAsPagination(ApplicationConfig.REVIEW_OF_RECOMMENDED_MAX_SIZE)
+                        )
+                    } else null
+                })
         )
     }
 
@@ -206,14 +207,16 @@ fun Route.word() {
         )
 
         Reviews.insertReview(review) //DBに追加
-        context.respond(ResponseInfo(
-            data = review
-        ))
+        context.respond(
+            ResponseInfo(
+                data = review
+            )
+        )
     }
 
 
     get<WordRoute.Search> {
-        context.request.tokenAuthentication()
+        val authUser = context.request.tokenAuthentication()
         val page = context.request.queryParameters["page"]?.toInt() ?: 1
         val keyword = context.request.queryParameters["keyword"] ?: ""
 
@@ -225,7 +228,17 @@ fun Route.word() {
         context.respond(
             ResponseInfo(
                 data = WordRoute.Search.SearchWordsResponse(
-                    body = words.splitAsPagination(page = page, index = 25).toMutableList(),
+                    body = words.splitAsPagination(page = page, index = 25).toMutableList().map { word ->
+                        hashMapOf(
+                            "id" to word.id,
+                            "name" to word.name,
+                            "number" to word.number,
+                            "mean" to word.mean,
+                            "description" to word.description,
+                            "category" to word.category,
+                            "rank" to authUser.getAnswer(word).rank
+                        )
+                    }.toMutableList(),
                     resultSize = words.size,
                     pageSize = words.maximumAsPagination(25)
                 )
