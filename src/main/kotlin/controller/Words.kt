@@ -52,8 +52,6 @@ object Words {
             )
         }
 
-        println("カンロ湯！")
-
         entries.forEach { entry ->
             val already = words.find { word -> word.name == entry.name && word.category.id == target.id }
             if (already == null) {

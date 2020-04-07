@@ -41,8 +41,8 @@ fun Application.module(testing: Boolean = false) {
     GoogleAPI.initialize()
 
     DatabaseHandler.initialize() //データベース初期化
-    Categories.initialize() //カテゴリーを読み込み
     Users.initialize() //ユーザー読み込み
+    Categories.initialize() //カテゴリーを読み込み
     Words.initialize()  // 単語データ読み込み
     Answers.initialize() //回答データ読み込み
     Reviews.initialize() //復習テストを読み込み

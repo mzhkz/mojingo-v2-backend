@@ -58,7 +58,7 @@ object Categories {
             builder += elements.random()
         }
 
-        return if (categories.filter { category -> category.id == builder }.isNotEmpty()) builder else generateNoDuplicationId()
+        return if (categories.filter { category -> category.id == builder }.isEmpty()) builder else generateNoDuplicationId()
     }
 
     /** データベースにデータを追加*/
@@ -69,6 +69,7 @@ object Categories {
             spread_sheet_id = category.spreadSheetId,
             description = category.description,
             owner_id = category.owner.id,
+            share_users = category.shareUsers.map { usr -> usr.id }.toMutableList(),
             created_at = category.createdAt,
             updated_at = category.createdAt,
             private = category.private
@@ -83,6 +84,7 @@ object Categories {
             Category.Model::_id eq category.id,
             Category.Model::name setTo  category.name,
             Category.Model::description setTo  category.description,
+            Category.Model::share_users setTo category.shareUsers.map { usr -> usr.id },
             Category.Model::private setTo  category.private,
             Category.Model::updated_at setTo Date
                 .from(LocalDateTime
