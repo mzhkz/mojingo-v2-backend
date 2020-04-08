@@ -231,7 +231,7 @@ fun Route.user() {
         if (authUser.accessLevel < target.accessLevel)
             throw BadRequestException("操作者の付与権限以上のユーザーは操作できません。乗っ取りなどの場合は、環境変数から管理者アカウントを有効にしてください。")
 
-        if (Users.users().any { user -> user.username == payload.username })
+        if (Users.users().any { user -> user.id != authUser.id && user.username == payload.username })
             throw BadRequestException("このユーザーIDはすでに使用されています。")
 
         target.apply {
