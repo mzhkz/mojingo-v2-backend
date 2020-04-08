@@ -11,7 +11,7 @@ class Category(@Expose val id: String,
                @Expose var description: String,
                @Expose val createdAt: Long,
                @Expose val updatedAt: Long,
-               @Expose val shareUsers: MutableList<User>,
+               val shareUsers: MutableList<User>,
                @Expose val private: Boolean) {
 
     companion object {

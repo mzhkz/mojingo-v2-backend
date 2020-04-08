@@ -152,6 +152,7 @@ class ReviewRoute {
             @Expose val review: Review? = null,
             @Expose val correctSize: Int = 0,
             @Expose val incorrectSize: Int = 0,
+            @Expose val percentage: Int = 0,
             @Expose val createAgo: String = ""
         )
         @Location("{id}")
@@ -258,10 +259,14 @@ fun Route.reviews() {
             .splitAsPagination(page = pageNumber, index = 10)
             .map { review ->
                 val impacts = Answers.answers().mapNotNull { answer -> answer.histories.find { history ->  history.impactReviewId == review.id}}
+                val correctSize = impacts.count { history -> history.result == 1 }
+                val incorrectSize = impacts.count { history -> history.result == 0 }
+
                 ReviewRoute.List.ReviewResponse(
                     review = review,
-                    correctSize = impacts.count { history -> history.result == 1 } ,
-                    incorrectSize = impacts.count { history -> history.result == 0 },
+                    correctSize = correctSize,
+                    incorrectSize = incorrectSize,
+                    percentage = Math.floor(correctSize.toDouble() /( correctSize + incorrectSize).toDouble() * 100.0).toInt(),
                     createAgo = review.createdAt.currentUnixTimediff()
                 )
             }
@@ -291,10 +296,14 @@ fun Route.reviews() {
             ?: throw BadRequestException("Not found $reviewId.")
 
         val impacts = Answers.answers().mapNotNull { answer -> answer.histories.find { history ->  history.impactReviewId == target.id}}
+        val correctSize = impacts.count { history -> history.result == 1 }
+        val incorrectSize = impacts.count { history -> history.result == 0 }
+
         context.respond(ResponseInfo(data = ReviewRoute.List.ReviewResponse(
             review = target,
             correctSize = impacts.count { history -> history.result == 1 } ,
             incorrectSize = impacts.count { history -> history.result == 0 },
+            percentage = Math.floor(correctSize.toDouble() /( correctSize + incorrectSize).toDouble() * 100.0).toInt(),
             createAgo = target.createdAt.currentUnixTimediff()
         )))
     }
