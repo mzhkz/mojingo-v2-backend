@@ -213,9 +213,7 @@ fun Route.reviews() {
         if (!(payload.start in 1..candidate.size && payload.end in (payload.start + 1)..candidate.size)) throw BadRequestException("指定された範囲が無効です ${payload.start} ~ ${payload.end}")
 
         val entries = Words.words()
-            .filter { word -> word.category.id == target.id }
-            .sortedBy { word -> word.number }
-            .subList(payload.start - 1, payload.end)
+            .filter { word -> word.category.id == target.id && word.number in payload.start..payload.end}
             .shuffled()
 
         val review = Review(
@@ -438,7 +436,7 @@ fun Route.reviews() {
         })
 
         if (Answers.isExamWordWithAnswer(answer)) { //ランク変動の時期だった場合
-            answer.rank = answer.rank + if (isCorrect) 1 else -1 //正解の場合は+1, 間違えた場合は-1
+            answer.rank += if (isCorrect) 1 else -1 //正解の場合は+1, 間違えた場合は-1
         }
         target.owner.refreshLastAnswered(targetWord.category, answer)
 

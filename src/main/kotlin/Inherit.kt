@@ -12,6 +12,7 @@ import me.mojingo.v2.backend.database.model.Word
 import me.mojingo.v2.backend.utilities.CurrentUnixTime
 import me.mojingo.v2.backend.utilities.toBase64
 import org.litote.kmongo.KMongo
+import org.litote.kmongo.eq
 import org.litote.kmongo.getCollection
 import java.io.File
 import java.nio.charset.Charset
@@ -46,27 +47,24 @@ object InheritExecuter {
     )
 
     fun execute() {
-        DatabaseHandler.initialize()
-        DatabaseHandler.clientSession
-
-        val v1Client = KMongo.createClient(MongoClientURI("mongodb+srv://application:mojingo123@mojingo-pp43m.gcp.mongodb.net/"))
+        val v1Client =
+            KMongo.createClient(MongoClientURI("mongodb+srv://application:mojingo123@mojingo-pp43m.gcp.mongodb.net/"))
         val v1Database = v1Client.getDatabase("mojingo")
         val v1Answers = mutableListOf<v1Answer>()
 
-        val  acollection = v1Database.getCollection<v1AnswerModel>("answers")
+        val acollection = v1Database.getCollection<v1AnswerModel>("answers")
         acollection.find().forEach {
-            val answer =  presentAnswer(it)
+            val answer = presentAnswer(it)
             v1Answers.add(answer)
         }
 
 
         val v1Words = mutableListOf<v1Word>()
-        val  wcollection = v1Database.getCollection<v1WordModel>("words")
+        val wcollection = v1Database.getCollection<v1WordModel>("words")
         wcollection.find().forEach {
-            val words =  presentWord(it)
+            val words = presentWord(it)
             v1Words.add(words)
         }
-
 
 
         val filterW = v1Words.filter { it.owner == "109593756084581831456" }
@@ -83,52 +81,49 @@ object InheritExecuter {
 
         println("${categoryId}で登録を回診します")
 
-        val enroll = v1Answers.filter { answer -> filterW.any { word -> word.id == answer.word } }
+        val enroll =
+            v1Answers.filter { answer -> filterW.any { word -> word.id == answer.word } && answer.rank == 0 && answer.analytics.size != 0 }
         enroll.forEach {
-            if (it.rank != 0) {
+            val word = filterW.find { word -> word.id == it.word }!!
 
-                val word = filterW.find { word -> word.id == it.word }!!
+            println(word.name)
 
-                body += "${word.name},${word.mean},${word.memo}\n"
+            Answers.session.insertOne(Answer.Model(
+                _id = Answers.generateNoDuplicationId(),
+                userId = Users.users().find { user -> user.username == "riku-m@keio.jp" }!!.id,
+                word_id = (categoryId + "||" + word.name).toBase64(),
+                rank = it.rank,
+                created_at = CurrentUnixTime,
+                updated_at = CurrentUnixTime,
+                histories = it.analytics.map { analytics ->
+                    Answer.History.Model(
+                        impact_review = "NONE",
+                        result = analytics.result,
+                        post_at = analytics.created
+                    )
+                } as MutableList<Answer.History.Model>
+            ))
 
+//            Answers.session.deleteMany( Answer.Model::word_id eq (categoryId + "||" + word.name).toBase64())
 
-                Answers.session.insertOne(Answer.Model(
-                    _id = Answers.generateNoDuplicationId(),
-                    userId = Users.users().find { user -> user.username == "riku-m" }!!.id,
-                    word_id = (categoryId + "||" + word.name).toBase64() ,
-                    rank = it.rank,
-                    created_at = CurrentUnixTime,
-                    updated_at = CurrentUnixTime,
-                    histories = it.analytics.map { analytics ->
-                        Answer.History.Model(
-                            impact_review = "NONE",
-                            result = analytics.result,
-                            post_at = analytics.created
-                        )
-                    } as MutableList<Answer.History.Model>
-                ))
-            }
+            println(Answers.session.countDocuments(Answer.Model::word_id eq "Q1c0b2JnOVVNfHx2b2x1bnRhcnk="))
         }
 
 //        file.writeText(body)
 
         println("完了！！")
+    }
 
 
-
-}
-
-
-
-data class v1Answer(
-    val id: String = "",
-    val word: String,
-    val respondent: String,
-    var rank: Int, //覚えているランク
-    var analytics: MutableList<AnswerAnalytics> = mutableListOf(),
-    val created: Long,
-    var updated: Long
-)
+    data class v1Answer(
+        val id: String = "",
+        val word: String,
+        val respondent: String,
+        var rank: Int, //覚えているランク
+        var analytics: MutableList<AnswerAnalytics> = mutableListOf(),
+        val created: Long,
+        var updated: Long
+    )
 
     /** ランクを設定する*/
     fun v1Answer.setRank(newRank: Int) {
@@ -197,8 +192,8 @@ data class v1Word(
     var mean: String,
     var memo: String = "",
     var tags: MutableList<String> = mutableListOf(),
-    val owner: String)
-
+    val owner: String
+)
 
 
 data class v1WordModel(
