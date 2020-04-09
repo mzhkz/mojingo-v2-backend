@@ -412,9 +412,9 @@ fun Route.reviews() {
             ?: throw BadRequestException("Not correct review_id")
         if (target.owner.id != authUser.id && authUser.accessLevel < 2) throw AuthorizationException("アクセス権限がありません")
         val marker = Markers.markers.find { marker -> marker.id == markerId }
-            ?: throw BadRequestException("Not correct marker_id")
+            ?: throw BadRequestException("回答専用セッションが無効です。リロードしてください")
 
-        if (marker.reflectReview.id != target.id) throw BadRequestException("Not correct marker")
+        if (marker.reflectReview.id != target.id) throw BadRequestException("回答専用セッションが無効です。")
         val isCorrect = payload.result == marker.correctsCheck
 
         val targetWord = Words.words().find { word -> payload.target == word.id }
@@ -425,6 +425,14 @@ fun Route.reviews() {
         if (answer.histories.find { history -> history.impactReviewId == target.id } != null)
             throw BadRequestException("この問題はすでに回答しています。${answer.word.name}")
 
+        if (Answers.isExamWordWithAnswer(answer)) { //ランク変動の時期だった場合
+            answer.rank += if (isCorrect) 1 else -1 //正解の場合は+1, 間違えた場合は-1
+
+            if (answer.rank < 0)
+                answer.rank = 0
+        }
+        target.owner.refreshLastAnswered(targetWord.category, answer)
+
         target.answers.add(answer.apply {
             histories.add(
                 Answer.History(
@@ -434,11 +442,6 @@ fun Route.reviews() {
                 )
             )
         })
-
-        if (Answers.isExamWordWithAnswer(answer)) { //ランク変動の時期だった場合
-            answer.rank += if (isCorrect) 1 else -1 //正解の場合は+1, 間違えた場合は-1
-        }
-        target.owner.refreshLastAnswered(targetWord.category, answer)
 
         Reviews.updateReview(target)
         Answers.updateAnswer(answer)

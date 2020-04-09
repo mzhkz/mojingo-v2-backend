@@ -122,6 +122,7 @@ object Answers {
     fun isExamWordWithAnswer(target: Answer): Boolean {
         val lately = target.histories.map { history ->  history.postAt }.max() ?: 0L
         val diff = CurrentUnixTime - lately //差分を出す
+        println( diff >= getDelay(target.rank))
         return diff >= getDelay(target.rank)
     }
 
