@@ -159,7 +159,7 @@ class UserRoute {
 fun Route.user() {
 
     post <UserRoute.Enroll>{
-        val authUser = context.request.tokenAuthentication(2)
+        context.request.tokenAuthentication(2)
         val payload = context.receive(UserRoute.Enroll.Payload::class)
 
         if (Users.users().any { user -> user.username == payload.username })
@@ -191,7 +191,7 @@ fun Route.user() {
             else {
                 if (authUser.accessLevel >= 2)
                     targetId
-                else throw AuthorizationException("Your token doesn't access this content.")
+                else throw AuthorizationException("アクセス権限がありません")
             }
 
         val targetProfile = Users.users().find { user -> user.id == id } ?: throw BadRequestException("Not found '$targetId' as User.")
@@ -231,7 +231,7 @@ fun Route.user() {
         if (authUser.accessLevel < target.accessLevel)
             throw BadRequestException("操作者の付与権限以上のユーザーは操作できません。乗っ取りなどの場合は、環境変数から管理者アカウントを有効にしてください。")
 
-        if (Users.users().any { user -> user.id != authUser.id && user.username == payload.username })
+        if (Users.users().any { user -> user.username == payload.username &&  user.id != target.id })
             throw BadRequestException("このユーザーIDはすでに使用されています。")
 
         target.apply {
