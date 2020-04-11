@@ -299,12 +299,33 @@ fun Route.category() {
         if (!target.shareUsers.contains(authUser))
             throw AuthorizationException("表示する権限がありません。")
 
-        val words = Words.words().filter { word -> word.category.id == target.id && word.name.indexOf(keyword) != -1 }
-            .sortedBy { word -> word.number }
+        var words = listOf<Word>()
 
+        Words.tagValidates.forEachIndexed { index, validate ->
+            val matched = validate.matchEntire(keyword)
+
+            when (index) {
+                0 -> {
+                    if (matched != null) {
+                        val min = matched.groupValues[2].toInt()
+                        val max = matched.groupValues[4].toInt()
+
+                        words = Words.words().filter { word -> word.category.id == target.id && word.number in min..max }
+                        return@forEachIndexed
+                    }
+                }
+                1 -> {
+                    words = Words.words().filter { word -> word.category.id == target.id }
+                        .map { word -> word to (word.name.indexOf(keyword) + word.mean.indexOf(keyword))  }
+                        .filter { pair -> pair.second >= -1 }
+                        .map { pair -> pair.first }
+                    return@forEachIndexed
+                }
+            }
+        }
 
         context.respond(ResponseInfo(data = CategoryRoute.View.Words.CategoryWordsResponse(
-            body = words.splitAsPagination(page = page, index = 25).map { word ->
+            body = words.sortedBy { word -> word.number }.splitAsPagination(page = page, index = 25).map { word ->
                 hashMapOf(
                     "id" to word.id,
                     "name" to word.name,

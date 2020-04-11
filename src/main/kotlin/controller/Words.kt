@@ -28,6 +28,10 @@ import java.io.File
 object Words {
 
     private val words = mutableListOf<Word>()
+    val tagValidates = mutableListOf(
+        Regex("^(num )([\\d]+)( )([\\d]+)\$"),
+        Regex("^*\$")
+    )
 
     fun words() = words.toMutableList()
 
