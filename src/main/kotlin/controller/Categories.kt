@@ -258,12 +258,10 @@ fun Route.category() {
         if (!target.shareUsers.contains(authUser))
             throw AuthorizationException("更新する権限がありません。")
 
-        if (target.private && target.owner.id != authUser.id)
-
-            Categories.updateCategory(target.apply {
-                name = payload.name
-                description = payload.description
-            })
+        Categories.updateCategory(target.apply {
+            name = payload.name
+            description = payload.description
+        })
 
         context.respond(ResponseInfo(message = "has been succeed"))
     }
@@ -310,13 +308,14 @@ fun Route.category() {
                         val min = matched.groupValues[2].toInt()
                         val max = matched.groupValues[4].toInt()
 
-                        words = Words.words().filter { word -> word.category.id == target.id && word.number in min..max }
+                        words =
+                            Words.words().filter { word -> word.category.id == target.id && word.number in min..max }
                         return@forEachIndexed
                     }
                 }
                 1 -> {
                     words = Words.words().filter { word -> word.category.id == target.id }
-                        .map { word -> word to (word.name.indexOf(keyword) + word.mean.indexOf(keyword))  }
+                        .map { word -> word to (word.name.indexOf(keyword) + word.mean.indexOf(keyword)) }
                         .filter { pair -> pair.second >= -1 }
                         .map { pair -> pair.first }
                     return@forEachIndexed
@@ -324,19 +323,26 @@ fun Route.category() {
             }
         }
 
-        context.respond(ResponseInfo(data = CategoryRoute.View.Words.CategoryWordsResponse(
-            body = words.sortedBy { word -> word.number }.splitAsPagination(page = page, index = 25).map { word ->
-                hashMapOf(
-                    "id" to word.id,
-                    "name" to word.name,
-                    "number" to word.number,
-                    "mean" to word.mean,
-                    "description" to word.description,
-                    "rank" to authUser.getAnswer(word).rank
+        context.respond(
+            ResponseInfo(
+                data = CategoryRoute.View.Words.CategoryWordsResponse(
+                    body = words.sortedBy { word -> word.number }.splitAsPagination(
+                        page = page,
+                        index = 25
+                    ).map { word ->
+                        hashMapOf(
+                            "id" to word.id,
+                            "name" to word.name,
+                            "number" to word.number,
+                            "mean" to word.mean,
+                            "description" to word.description,
+                            "rank" to authUser.getAnswer(word).rank
+                        )
+                    }.toMutableList(),
+                    pageSize = words.maximumAsPagination(25)
                 )
-            }.toMutableList(),
-            pageSize = words.maximumAsPagination(25)
-        )))
+            )
+        )
     }
 
 }

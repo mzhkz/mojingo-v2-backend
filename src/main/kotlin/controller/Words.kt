@@ -226,9 +226,32 @@ fun Route.word() {
 
         requireNotNullAndNotEmpty(page) //Null and Empty Check!
 
-        val words = if (keyword.isNotEmpty()) Words.words().filter { word -> word.category.shareUsers.contains(authUser) && word.name.indexOf(keyword) != -1 }
-            .sortedBy { word -> word.number }
-        else mutableListOf()
+        var words = listOf<Word>()
+
+        Words.tagValidates.forEachIndexed { index, validate ->
+            val matched = validate.matchEntire(keyword)
+
+            when (index) {
+                0 -> {
+                    if (matched != null) {
+                        val min = matched.groupValues[2].toInt()
+                        val max = matched.groupValues[4].toInt()
+
+                        words =
+                            Words.words().filter { word -> word.category.shareUsers.contains(authUser) && word.number in min..max }
+                        return@forEachIndexed
+                    }
+                }
+                1 -> {
+                    words = Words.words().filter { word -> word.category.shareUsers.contains(authUser) }
+                        .map { word -> word to (word.name.indexOf(keyword) + word.mean.indexOf(keyword)) }
+                        .filter { pair -> pair.second >= -1 }
+                        .map { pair -> pair.first }
+                    return@forEachIndexed
+                }
+            }
+        }
+
 
         context.respond(
             ResponseInfo(
@@ -254,7 +277,6 @@ fun Route.word() {
     get<WordRoute.Pronounce> { query ->
         context.request.tokenAuthentication()
         val pair = query.wordId.fromBase64().split("||")
-
         val language = context.request.queryParameters["language"] ?: "en-US"
 
         val target = Words.words().find { word -> pair[1] == word.name && pair[0] == word.category.id }

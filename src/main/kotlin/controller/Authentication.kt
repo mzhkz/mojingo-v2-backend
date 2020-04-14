@@ -94,7 +94,7 @@ fun ApplicationRequest.tokenAuthentication(accessLevel: Int = 1): User {
 
     val id = jwt.getClaim(User.Model::_id.name).asString()
     val user = Users.users().find { user -> user.id == id } ?: throw AuthorizationException("トークンが無効です。再読み込みをしてください")
-    if (user.accessLevel < accessLevel) throw AuthorizationException("アクセス権限がありません.")
+    if (user.accessLevel < accessLevel || user.accessLevel <= 0) throw AuthorizationException("アクセス権限がありません.")
 
     return user
 }
