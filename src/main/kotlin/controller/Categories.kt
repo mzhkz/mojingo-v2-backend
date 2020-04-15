@@ -234,8 +234,6 @@ fun Route.category() {
         val target = Categories.categories().find { category -> category.id == categoryId }
             ?: throw BadRequestException("Not correct category_id")
 
-        val words = Words.words().filter { word -> word.category.id == target.id }
-
         context.respond(
             ResponseInfo(
                 data = CategoryRoute.CategoryResponse(

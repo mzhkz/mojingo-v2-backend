@@ -210,7 +210,10 @@ fun Route.reviews() {
         val candidate = Words.words()
             .filter { word -> word.category.id == target.id }
 
-        if (!(payload.start in 1..candidate.size && payload.end in (payload.start + 1)..candidate.size)) throw BadRequestException("指定された範囲が無効です ${payload.start} ~ ${payload.end}")
+        val min = candidate.minBy { word -> word.number }!!.number
+        val max = candidate.maxBy { word -> word.number }!!.number
+
+        if (!(payload.start in min..max && payload.end in (payload.start + 1)..max)) throw BadRequestException("指定された範囲が無効です ${payload.start} ~ ${payload.end}")
 
         val entries = Words.words()
             .filter { word -> word.category.id == target.id && word.number in payload.start..payload.end}
