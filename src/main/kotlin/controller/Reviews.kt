@@ -254,9 +254,9 @@ fun Route.reviews() {
 
         if (targetUser.id != authUser.id && authUser.accessLevel < 2) throw AuthorizationException("権限が足りません")
 
-        val target = Reviews.reviews()
+        val entire = Reviews.reviews()
             .filter { review -> review.owner.id == targetUser.id }
-            .reversed()
+        val target = entire.reversed()
             .splitAsPagination(page = pageNumber, index = 10)
             .map { review ->
                 val impacts = Answers.answers().mapNotNull { answer -> answer.histories.find { history ->  history.impactReviewId == review.id}}
@@ -275,7 +275,7 @@ fun Route.reviews() {
         context.respond(ResponseInfo(
             data = ReviewRoute.List.ListResponse(
                 reviews = target.toMutableList(),
-                pageSize = target.maximumAsPagination(10)
+                pageSize = entire.maximumAsPagination(10)
             )
         ))
     }
