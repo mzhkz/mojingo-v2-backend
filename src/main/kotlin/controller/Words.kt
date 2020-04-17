@@ -51,7 +51,7 @@ object Words {
                 number = index + 1,
                 name = "${line.getOrNull(0)}",
                 mean = "${line.getOrNull(1)}",
-                description = if (line.size > 2) "${line.getOrNull(2)}" else "",
+                description = (if (line.size > 2) "${line.getOrNull(2)}" else "").toDecorateForDescription(),
                 category = target
             )
         }
@@ -93,7 +93,7 @@ object Words {
             val textToSpeechClient = TextToSpeechClient.create()
             val audioContent = textToSpeechClient.synthesizeSpeech(
                 SynthesisInput.newBuilder()
-                    .setText(word.name)
+                    .setText(word.name.replace('~', ' ').trim())
                     .build(),
                 VoiceSelectionParams.newBuilder()
                     .setLanguageCode(language.code)
